@@ -38,6 +38,9 @@ local Lighting      = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LP            = Players.LocalPlayer
 
+local Workspace = game:GetService("Workspace")
+local SoundService = game:GetService("SoundService")
+
 local CheckSpeedNum = 1
 local LightToggleStatus = false
 local IsEscapeHunt = false
@@ -642,6 +645,7 @@ local LabelPhotos      = GameLeft:AddLabel("Photos Taken: (0/6)")
 local MainTab = Window:AddTab("Main Controls", "house")
 local AutoLeft = MainTab:AddLeftGroupbox("AUTOMATION", "cpu")
 local PlayerLeft = MainTab:AddLeftGroupbox("PLAYER MODS", "user")
+local EvidenceBox = MainTab:AddRightGroupbox("EVIDENCE", "file-plus")
 local EspBox = MainTab:AddRightGroupbox("ESP", "eye")
 local MiscBox = MainTab:AddRightGroupbox("MISCELLANEOUS")
 
@@ -667,7 +671,7 @@ AutoLeft:AddToggle("AutoSpiritToggle", {
 		end
     end
 })
-
+--[[
 AutoLeft:AddButton({
 	Text = "Dump & Place items near ghost",
 	Func = function()
@@ -708,6 +712,189 @@ AutoLeft:AddButton({
 		db = false
 	end
 })
+]]
+
+local MyDisabledButton = AutoLeft:AddButton({
+	Text = "Dump & Place items near ghost",
+	Func = function()
+		
+	end,
+	DoubleClick = false,
+	Tooltip = "This is a disabled button",
+	DisabledTooltip = "Disable", -- Information shown when you hover over the button while it's disabled
+	Disabled = true,
+})
+
+
+
+
+
+
+
+
+
+
+
+
+local CONFIG = {
+    GlassEnabled = true,
+    ThrowEnabled = true,
+    ScratchEnabled = true,
+    NotifyTime = 10,
+    GlassRoute = "BrokenGlass",
+    ScratchRoute = "ScratchText",
+    
+    Counters = {
+        Glass = 0,
+        Throwing = 0,
+        Scratch = 0
+    },
+    
+    ActiveNotifications = {
+        Glass = nil,
+        Throwing = nil,
+        Scratch = nil
+    }
+}
+
+local THROW_IDS = {
+    ["9113470969"] = "Body",
+    ["9118833449"] = "Book",
+    ["9113251349"] = "Cardboard",
+    ["9113768979"] = "Chair",
+    ["9119920406"] = "Glass Object",
+    ["9117450506"] = "Heavy Object",
+    ["9113720294"] = "Medium Object",
+    ["9116703825"] = "Metal",
+    ["9116630454"] = "Metal Can",
+    ["9113564136"] = "Plush",
+    ["9120885468"] = "Wood"
+}
+
+local function getAssetNumber(soundId)
+    return soundId:match("%d+")
+end
+
+local function clearNotification(typeKey)
+    local oldNotify = CONFIG.ActiveNotifications[typeKey]
+    if oldNotify then
+        if type(oldNotify) == "table" and rawget(oldNotify, "Destroy") then
+            oldNotify:Destroy()
+        elseif type(oldNotify) == "table" and rawget(oldNotify, "Remove") then
+            oldNotify:Remove()
+        end
+        CONFIG.ActiveNotifications[typeKey] = nil
+    end
+end
+
+EvidenceBox:AddCheckbox("GlassCheckbox", {
+    Text = "Glass Detection",
+    Default = CONFIG.GlassEnabled,
+    Callback = function(Value)
+        CONFIG.GlassEnabled = Value
+        Library:Notify({
+            Title = "Glass Detector",
+            Description = "Detection is now " .. (Value and "Enabled" or "Disabled"),
+            Time = CONFIG.NotifyTime,
+        })
+    end,
+})
+
+EvidenceBox:AddCheckbox("ThrowCheckbox", {
+    Text = "Throwing Detection",
+    Default = CONFIG.ThrowEnabled,
+    Callback = function(Value)
+        CONFIG.ThrowEnabled = Value
+        Library:Notify({
+            Title = "Throw Detector",
+            Description = "Detection is now " .. (Value and "Enabled" or "Disabled"),
+            Time = CONFIG.NotifyTime,
+        })
+    end,
+})
+
+EvidenceBox:AddCheckbox("ScratchCheckbox", {
+    Text = "Scratch Detection",
+    Default = CONFIG.ScratchEnabled,
+    Callback = function(Value)
+        CONFIG.ScratchEnabled = Value
+        Library:Notify({
+            Title = "Scratch Detector",
+            Description = "Detection is now " .. (Value and "Enabled" or "Disabled"),
+            Time = CONFIG.NotifyTime,
+        })
+    end,
+})
+
+local brokenGlassFolder = Workspace:WaitForChild(CONFIG.GlassRoute, 5)
+if brokenGlassFolder then
+    brokenGlassFolder.ChildAdded:Connect(function()
+        CONFIG.Counters.Glass = CONFIG.Counters.Glass + 1
+        
+        if CONFIG.GlassEnabled then
+            clearNotification("Glass")
+            CONFIG.ActiveNotifications.Glass = Library:Notify({
+                Title = "Alert: Broken Glass",
+                Description = ("Total Detected: %d"):format(CONFIG.Counters.Glass),
+                Time = CONFIG.NotifyTime,
+            })
+        end
+    end)
+end
+
+local scratchTextFolder = Workspace:WaitForChild(CONFIG.ScratchRoute, 5)
+if scratchTextFolder then
+    scratchTextFolder.ChildAdded:Connect(function()
+        CONFIG.Counters.Scratch = CONFIG.Counters.Scratch + 1
+        
+        if CONFIG.ScratchEnabled then
+            clearNotification("Scratch")
+            CONFIG.ActiveNotifications.Scratch = Library:Notify({
+                Title = "Alert: Scratch Detected",
+                Description = ("Total Scratches: %d"):format(CONFIG.Counters.Scratch),
+                Time = CONFIG.NotifyTime,
+            })
+        end
+    end)
+end
+
+local function checkAndNotifySound(sound)
+    if not sound:IsA("Sound") then return end
+    
+    local idNum = getAssetNumber(sound.SoundId)
+    local materialName = THROW_IDS[idNum]
+    
+    if materialName then
+        CONFIG.Counters.Throwing = CONFIG.Counters.Throwing + 1
+        
+        if CONFIG.ThrowEnabled then
+            clearNotification("Throwing")
+            CONFIG.ActiveNotifications.Throwing = Library:Notify({
+                Title = "Alert: Object Thrown",
+                Description = ("Type: %s\nTotal Thrown: %d"):format(materialName, CONFIG.Counters.Throwing),
+                Time = CONFIG.NotifyTime,
+            })
+        end
+    end
+end
+
+Workspace.DescendantAdded:Connect(checkAndNotifySound)
+for _, descendant in ipairs(Workspace:GetDescendants()) do
+    checkAndNotifySound(descendant)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 PlayerLeft:AddDropdown("WalkSpeedDropdown", {
@@ -918,190 +1105,6 @@ MiscBox:AddDropdown("RefreshTickRate", {
     end
 })
 
-local FavRoomTab1 = Window:AddTab("Fav Room", "file-plus")
-local FavRoomTab2 = FavRoomTab1:AddLeftGroupbox("Juniper Road", "cpu")
-
-FavRoomTab2:AddDropdown("JuniperOfficeDropdown", {
-	Values = { "Banshee", "Specter", "Spirit", "Umbra" },
-	Default = 1,
-	Multi = false,
-	Text = "Office",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab2:AddDropdown("JuniperKitchenDropdown", {
-	Values = { "Aswang", "The wisp", "Dybukk", "Siren" },
-	Default = 1,
-	Multi = false,
-	Text = "Kitchen",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab2:AddDropdown("JuniperPantryDropdown", {
-	Values = { "Revenant", "Leviathan", "Umbra", "Siren" },
-	Default = 1,
-	Multi = false,
-	Text = "Pantry",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab2:AddDropdown("JuniperLivingRoomDropdown", {
-	Values = { "Kares", "Vex", "Dullahan", "Aswang" },
-	Default = 1,
-	Multi = false,
-	Text = "Living room",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab2:AddDropdown("JuniperBedroomDropdown", {
-	Values = { "Demon", "Wendigo", "Wriath", "Entity" },
-	Default = 1,
-	Multi = false,
-	Text = "Bedroom",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab2:AddDropdown("JuniperLaundryDropdown", {
-	Values = { "Nightmare", "Ghoul", "Entity", "Oni", "Spirit" },
-	Default = 1,
-	Multi = false,
-	Text = "Laundry",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab2:AddDropdown("JuniperBathroomDropdown", {
-	Values = { "Shadow", "Oni", "Phantom", "Skinwalker" },
-	Default = 1,
-	Multi = false,
-	Text = "Bathroom",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-local FavRoomTab = FavRoomTab1:AddRightGroupbox("Prison", "cpu")
-
-FavRoomTab:AddDropdown("VisitorCenterDropdown", {
-	Values = { "Ghoul", "Entity" },
-	Default = 1,
-	Multi = false,
-	Text = "VISITOR CENTER",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("InfirmaryDropdown", {
-	Values = { "The wisp", "Dybukk", "Siren", "Kares" },
-	Default = 1,
-	Multi = false,
-	Text = "INFIRMARY",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("GuardStorageDropdown", {
-	Values = { "Aswang", "Dybukk", "Kares", "Dullhan" },
-	Default = 1,
-	Multi = false,
-	Text = "GUARD QUARTER",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("BathroomDropdown", {
-	Values = { "Banshee", "Umbra", "Leviathan" },
-	Default = 1,
-	Multi = false,
-	Text = "BATHROOM",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("ShowerDropdown", {
-	Values = { "Leviathan", "Revenant" },
-	Default = 1,
-	Multi = false,
-	Text = "SHOWER",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("CafeteriaDropdown", {
-	Values = { "Specter", "Skinwalker", "Banshee" },
-	Default = 1,
-	Multi = false,
-	Text = "CAFETERIA",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("CellsDropdown", {
-	Values = { "Spirit", "Specter", "Banshee" },
-	Default = 1,
-	Multi = false,
-	Text = "CELLS",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("LoungeDropdown", {
-	Values = { "Nightmare", "Ghoul" },
-	Default = 1,
-	Multi = false,
-	Text = "LOUNGE",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("ControlRoomDropdown", {
-	Values = { "Dullhan", "Aswang", "Siren", "Kares" },
-	Default = 1,
-	Multi = false,
-	Text = "CONTROL ROOM",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("StorageRoom1Dropdown", {
-	Values = { "Leviathan", "Siren" },
-	Default = 1,
-	Multi = false,
-	Text = "STORAGE ROOM 1",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("StorageRoom2Dropdown", {
-	Values = { "Vex", "Kares" },
-	Default = 1,
-	Multi = false,
-	Text = "STORAGE ROOM 2",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("KitchenDropdown", {
-	Values = { "Shadow", "Phantom", "Skinwalker" },
-	Default = 1,
-	Multi = false,
-	Text = "KITCHEN",
-	Searchable = true,
-	Callback = function(Value) end,
-})
-
-FavRoomTab:AddDropdown("OfficeDropdown", {
-	Values = { "Demon", "Wendigo", "Wraith" },
-	Default = 1,
-	Multi = false,
-	Text = "OFFICE",
-	Searchable = true,
-	Callback = function(Value) end,
-})
 
 --================================================================--
 -- SETTINGS TAB
@@ -1167,7 +1170,7 @@ RunService.Heartbeat:Connect(function()
 	if ghostModel and TextLabel and TextLabel:IsA("TextLabel") and BillboardGui.Enabled then
 		local rawSpeed = GetGhostVelocity()
 		
-		if rawSpeed >= 29.0 then
+		if rawSpeed >= 27.0 then
 			hasReachedGreen = true
 		elseif rawSpeed >= 24.0 then
 			hasReachedYellow = true
