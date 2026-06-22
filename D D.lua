@@ -384,7 +384,6 @@ end
 -- AUTO LOOT SYSTEM 
 --================================================================--
 
-
 local AutoPickEnabled = false
 local AutoOpenEnabled = false
 local AutoGearEnabled = false
@@ -393,7 +392,6 @@ local OpenConnection
 local GearLoop
 
 local BLOCKED_ITEMS = {"Flashlight","Bandage","Box","Bloxy Cola","Hourglass","Revive Syringe","Baseball Bat","Teleporter","Z-Ray Gun","Double Barrel","Random Teleporter","Stun Grenade","Bat","Baseball","Molotov","Bio-Scanner","The Trap"}
-
 local GEAR_ONLY = {"Flashlight","Bandage","Box","Bloxy Cola","Hourglass","Revive Syringe","Baseball Bat","Teleporter","Z-Ray Gun","Double Barrel","Random Teleporter","Stun Grenade","Bat","Baseball","Molotov","Bio-Scanner","The Trap"}
 
 local BLOCKED_SET = {}
@@ -402,6 +400,47 @@ for _,v in ipairs(BLOCKED_ITEMS) do BLOCKED_SET[v:lower()] = true end
 local GEAR_SET = {}
 for _,v in ipairs(GEAR_ONLY) do GEAR_SET[v:lower()] = true end
 
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+local function getGroundPart()
+    local el = workspace:FindFirstChild("电梯")
+    local l4 = el and el:FindFirstChild("Left4")
+    return l4 and l4:FindFirstChild("Ground")
+end
+
+local function isNearGround(instance)
+    local ground = getGroundPart()
+    if not ground or not instance then return false end
+    
+    local targetPart = nil
+    if instance:IsA("BasePart") then
+        targetPart = instance
+    elseif instance:IsA("Model") then
+        targetPart = instance.PrimaryPart or instance:FindFirstChildWhichIsA("BasePart", true)
+    else
+        targetPart = instance:FindFirstChildWhichIsA("BasePart", true)
+    end
+    
+    if not targetPart then return false end
+    
+    local distance = (targetPart.Position - ground.Position).Magnitude
+    return distance <= 15
+end
+
+local function isPlayerOnGround()
+    local char = localPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    return isNearGround(hrp)
+end
+
+local function shouldBlockInteraction(obj)
+    if isPlayerOnGround() then return true end
+    if isNearGround(obj) or obj:IsDescendantOf(workspace["电梯"].Left4.Ground) then return true end
+    return false
+end
+
 local function fireInteract(obj, force)
     if TEvent and TEvent.FireRemote then
         TEvent.FireRemote("Interactable", obj, force == true)
@@ -409,17 +448,37 @@ local function fireInteract(obj, force)
 end
 
 local function isBlocked(obj)
+    if shouldBlockInteraction(obj) then return true end
+
     local lootUI = obj:FindFirstChild("LootUI", true)
     local itemName = if lootUI then lootUI:FindFirstChild("ItemName", true) else nil
     
-    return itemName and BLOCKED_SET[itemName.Text:lower()] or false
+    if itemName and itemName.Text then
+        local nameLower = itemName.Text:lower()
+        if BLOCKED_SET[nameLower] then return true end
+        if string.find(nameLower, "recipe") or string.find(nameLower, "key") then
+            return true
+        end
+    end
+    
+    return false
 end
 
 local function isGear(obj)
+    if shouldBlockInteraction(obj) then return false end
+
     local lootUI = obj:FindFirstChild("LootUI", true)
     local itemName = if lootUI then lootUI:FindFirstChild("ItemName", true) else nil
     
-    return itemName and GEAR_SET[itemName.Text:lower()] or false
+    if itemName and itemName.Text then
+        local nameLower = itemName.Text:lower()
+        if GEAR_SET[nameLower] then return true end
+        if string.find(nameLower, "recipe") or string.find(nameLower, "key") then
+            return false
+        end
+    end
+    
+    return false
 end
 
 local function toggleAutoPick(state)
@@ -482,7 +541,6 @@ end
 
 
 
-
 --================================================================--
 -- AUTO FARM SYSTEM 
 --================================================================--
@@ -501,30 +559,50 @@ local BLACKLIST = {
 local LP = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
+local function getGroundPart()
+	local el = workspace:FindFirstChild("电梯")
+	local l4 = el and el:FindFirstChild("Left4")
+	return l4 and l4:FindFirstChild("Ground")
+end
+
+local function isNearGround(part)
+	local ground = getGroundPart()
+	if not ground or not part then return false end
+	return (part.Position - ground.Position).Magnitude <= 15
+end
+
 local function teleportToElevator()
 	pcall(function()
-		local elev = workspace:FindFirstChild("电梯")
-		if elev and elev:FindFirstChild("Left4") then
-			local target = elev.Left4.Ground
-			local char = LP.Character or LP.CharacterAdded:Wait()
-
-			if target and char then
-				char:PivotTo(target.CFrame + Vector3.new(0, 3, 0))
-			end
+		local ground = getGroundPart()
+		local char = LP.Character or LP.CharacterAdded:Wait()
+		if ground and char then
+			char:PivotTo(ground.CFrame + Vector3.new(0, 3, 0))
 		end
 	end)
 end
 
 local function getValidLoot()
 	local loot = {}
+	local ground = getGroundPart()
+	
 	for _, obj in workspace.GameSystem.Loots.World:GetChildren() do
-		local interact = obj:FindFirstChild("Folder", true) and obj.Folder:FindFirstChild("Interactable", true)
-		local itemName = interact and interact:FindFirstChild("LootUI", true) 
-			and interact.LootUI:FindFirstChild("Frame", true) 
-			and interact.LootUI.Frame:FindFirstChild("ItemName")
-		if itemName and not BLACKLIST[itemName.Text] then
-			local part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
-			if part then table.insert(loot, part) end
+		local part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+		if part then
+			if ground and (part:IsDescendantOf(ground) or isNearGround(part)) then
+				continue
+			end
+			
+			local interact = obj:FindFirstChild("Folder", true) and obj.Folder:FindFirstChild("Interactable", true)
+			local itemName = interact and interact:FindFirstChild("LootUI", true) 
+				and interact.LootUI:FindFirstChild("Frame", true) 
+				and interact.LootUI.Frame:FindFirstChild("ItemName")
+				
+			if itemName and not BLACKLIST[itemName.Text] then
+				local nameLower = itemName.Text:lower()
+				if not string.find(nameLower, "recipe") and not string.find(nameLower, "key") then
+					table.insert(loot, part)
+				end
+			end
 		end
 	end
 	return loot
