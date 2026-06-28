@@ -644,17 +644,45 @@ local LabelPhotos      = GameLeft:AddLabel("Photos Taken: (0/6)")
 --================================================================--
 -- MAIN CONTROLS TAB
 --================================================================--
-local MainTab = Window:AddTab("Main Controls", "house")
+local MainTab = Window:AddTab("Main", "house")
 local AutoLeft = MainTab:AddLeftGroupbox("AUTOMATION", "cpu")
 local PlayerLeft = MainTab:AddLeftGroupbox("PLAYER MODS", "user")
-local EvidenceBox = MainTab:AddRightGroupbox("EVIDENCE", "file-plus")
 local EspBox = MainTab:AddRightGroupbox("ESP", "eye")
+
+local EmoteBox = MainTab:AddRightGroupbox("EMOTE", "smile")
+
+local EvidenceBox = MainTab:AddRightGroupbox("EVIDENCE", "file-plus")
 local MiscBox = MainTab:AddRightGroupbox("MISCELLANEOUS")
 
+--================================================================--
+-- GHOST INFO
+--================================================================--
 local MainTab2 = Window:AddTab("Ghost", "house")
-
-
 local EvidenceBox2 = MainTab2:AddRightGroupbox("DETECTION", "folder-plus")
+local PlayerLeft2 = MainTab2:AddLeftGroupbox("REQUIRED", "file-text")
+
+PlayerLeft2:AddLabel("Requirements needed.")
+PlayerLeft2:AddLabel("Only works on Juniper Road.")
+PlayerLeft2:AddLabel("Only works on Custom No Evidence.")
+PlayerLeft2:AddLabel("Recommended ping: under 90 ms.")
+PlayerLeft2:AddLabel("Do not use any speed modifiers.")
+PlayerLeft2:AddLabel("Do not use micmicry challenge.")
+PlayerLeft2:AddLabel("Red = Detection is not working.")
+
+local PlayerLeft3 = MainTab2:AddLeftGroupbox("READ ME", "book")
+
+PlayerLeft3:AddLabel("This detection is not 100% accurate.")
+PlayerLeft3:AddLabel("Play normally and don't rely on it completely.")
+PlayerLeft3:AddLabel("It only detects some ghost types.")
+PlayerLeft3:AddLabel("Please read the requirements")
+
+
+
+
+
+--================================================================--
+-- AUTO TAB
+--================================================================--
 
 AutoLeft:AddToggle("EscapeHuntToggle", {
     Text = "Auto Escape Hunt",
@@ -777,7 +805,9 @@ local MyDisabledButton = AutoLeft:AddButton({
 
 
 
-
+--================================================================--
+-- EVIDENCE THROWING 
+--================================================================--
 
 local CONFIG = {
     GlassEnabled = true,
@@ -956,7 +986,9 @@ end
 
 
 
-
+--================================================================--
+-- PLAYER TAB
+--================================================================--
 --[[
 
 
@@ -1102,6 +1134,11 @@ PlayerLeft:AddButton({
 	end
 })
 
+
+--================================================================--
+-- ESP TAB
+--================================================================--
+
 EspBox:AddToggle("GhostVisibilityToggle", {
 	Text = "Permanent Ghost Visibility",
 	Default = false,
@@ -1183,6 +1220,12 @@ EspBox:AddToggle("ItemEspOpt", {
 	end
 })
 
+
+
+--================================================================--
+-- MISC TAB
+--================================================================--
+
 MiscBox:AddButton({
 	Text = "Turn On Fuse",
 	Func = function()
@@ -1232,32 +1275,72 @@ MiscBox:AddDropdown("RefreshTickRate", {
 
 
 
+--================================================================--
+-- EMOTE 
+--================================================================--
+local currentTrack = nil
+local selectedEmote = "float emote"
+
+local emotes = {
+    ["float emote"] = "rbxassetid://138961919210199",
+    ["head pop"] = "rbxassetid://105544444013843"
+}
+
+EmoteBox:AddDropdown("EmoteDropdown", {
+	Values = { "float emote", "head pop" },
+	Default = 1,
+	Multi = false,
+	Text = "Select Emote",
+	Searchable = true,
+	Callback = function(Value)
+		selectedEmote = Value
+	end,
+})
+
+EmoteBox:AddButton({
+	Text = "Play Emote",
+	Func = function()
+		local player = game:GetService("Players").LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoid = character:WaitForChild("Humanoid")
+		local animator = humanoid:WaitForChild("Animator")
+
+		if currentTrack then
+			currentTrack:Stop()
+			currentTrack:Destroy()
+			currentTrack = nil
+		end
+
+		local animId = emotes[selectedEmote]
+		if animId then
+			local animation = Instance.new("Animation")
+			animation.AnimationId = animId
+			
+			currentTrack = animator:LoadAnimation(animation)
+			currentTrack:Play()
+		end
+	end,
+})
+
+EmoteBox:AddButton({
+	Text = "Stop Emote",
+	Func = function()
+		if currentTrack then
+			currentTrack:Stop()
+			currentTrack:Destroy()
+			currentTrack = nil
+		end
+	end,
+})
 
 
 
 
 
+--================================================================--
+-- GHOST DETECTION 
+--================================================================--
 
-
-
-
-
-local PlayerLeft2 = MainTab2:AddLeftGroupbox("REQUIRED", "file-text")
-
-PlayerLeft2:AddLabel("Requirements needed.")
-PlayerLeft2:AddLabel("Only works on Juniper Road.")
-PlayerLeft2:AddLabel("Only works on Custom No Evidence.")
-PlayerLeft2:AddLabel("Recommended ping: under 90 ms.")
-PlayerLeft2:AddLabel("Do not use any speed modifiers.")
-PlayerLeft2:AddLabel("Do not use micmicry challenge.")
-PlayerLeft2:AddLabel("Red = Detection is not working.")
-
-local PlayerLeft3 = MainTab2:AddLeftGroupbox("READ ME", "book")
-
-PlayerLeft3:AddLabel("Reminder: This detection is not 100% accurate.")
-PlayerLeft3:AddLabel("Play normally and don't rely on it completely.")
-PlayerLeft3:AddLabel("It only detects some ghost types.")
-PlayerLeft3:AddLabel("Please read the requirements")
 
 
 
