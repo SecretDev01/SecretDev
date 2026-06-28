@@ -37,6 +37,8 @@ local RunService    = game:GetService("RunService")
 local Lighting      = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LP            = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+
 
 local Workspace = game:GetService("Workspace")
 local SoundService = game:GetService("SoundService")
@@ -649,6 +651,11 @@ local EvidenceBox = MainTab:AddRightGroupbox("EVIDENCE", "file-plus")
 local EspBox = MainTab:AddRightGroupbox("ESP", "eye")
 local MiscBox = MainTab:AddRightGroupbox("MISCELLANEOUS")
 
+local MainTab2 = Window:AddTab("Ghost", "house")
+
+
+local EvidenceBox2 = MainTab2:AddRightGroupbox("DETECTION", "folder-plus")
+
 AutoLeft:AddToggle("EscapeHuntToggle", {
     Text = "Auto Escape Hunt",
     Default = false,
@@ -713,6 +720,42 @@ AutoLeft:AddButton({
 	end
 })
 ]]
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local FireSaltShotgun = ReplicatedStorage:WaitForChild("Events"):WaitForChild("FireSaltShotgun")
+
+AutoLeft:AddButton({
+	Text = "Shoot Ghost",
+	Func = function()
+		local ghost = workspace:FindFirstChild("Ghost")
+		
+		if ghost then
+			local targetPart = ghost:FindFirstChild("Left Arm") or ghost:FindFirstChild("HumanoidRootPart")
+			
+			if targetPart then
+				-- Gets the exact position of the ghost right when you click
+				local targetPosition = targetPart.Position
+				local direction = Vector3.new(-0.204, 0.975, -0.084) 
+
+				local args = {
+					[1] = targetPart,
+					[2] = targetPosition, 
+					[3] = direction
+				}
+
+				-- Fires exactly one time per click
+				FireSaltShotgun:FireServer(unpack(args))
+				print("Gay")
+			else
+				print("Gay")
+			end
+		else
+			print("Gay")
+		end
+	end,
+})
+
 
 local MyDisabledButton = AutoLeft:AddButton({
 	Text = "Dump & Place items near ghost",
@@ -787,6 +830,10 @@ local function clearNotification(typeKey)
     end
 end
 
+-- =================================================================
+-- UI ELEMENTS (Checkboxes)
+-- =================================================================
+
 EvidenceBox:AddCheckbox("GlassCheckbox", {
     Text = "Glass Detection",
     Default = CONFIG.GlassEnabled,
@@ -825,11 +872,31 @@ EvidenceBox:AddCheckbox("ScratchCheckbox", {
         })
     end,
 })
+EvidenceBox:AddDivider()
+-- =================================================================
+-- UI MONITORS (Labels added here)
+-- =================================================================
+-- Change "EvidenceBox" to "EvLeft" if you want them on the left side instead!
+local LabelGlass = EvidenceBox:AddLabel("Total Glass: 0")
+local LabelThrow = EvidenceBox:AddLabel("Total Thrown: 0")
+local LabelScratch = EvidenceBox:AddLabel("Total Scratches: 0")
+
+-- Helper function to refresh live data on your screen
+local function updateLabels()
+    LabelGlass:SetText("Total Glass: " .. tostring(CONFIG.Counters.Glass))
+    LabelThrow:SetText("Total Thrown: " .. tostring(CONFIG.Counters.Throwing))
+    LabelScratch:SetText("Total Scratches: " .. tostring(CONFIG.Counters.Scratch))
+end
+
+-- =================================================================
+-- DETECTION LOGIC
+-- =================================================================
 
 local brokenGlassFolder = Workspace:WaitForChild(CONFIG.GlassRoute, 5)
 if brokenGlassFolder then
     brokenGlassFolder.ChildAdded:Connect(function()
         CONFIG.Counters.Glass = CONFIG.Counters.Glass + 1
+        updateLabels() -- Update screen UI
         
         if CONFIG.GlassEnabled then
             clearNotification("Glass")
@@ -846,6 +913,7 @@ local scratchTextFolder = Workspace:WaitForChild(CONFIG.ScratchRoute, 5)
 if scratchTextFolder then
     scratchTextFolder.ChildAdded:Connect(function()
         CONFIG.Counters.Scratch = CONFIG.Counters.Scratch + 1
+        updateLabels() -- Update screen UI
         
         if CONFIG.ScratchEnabled then
             clearNotification("Scratch")
@@ -866,6 +934,7 @@ local function checkAndNotifySound(sound)
     
     if materialName then
         CONFIG.Counters.Throwing = CONFIG.Counters.Throwing + 1
+        updateLabels() -- Update screen UI
         
         if CONFIG.ThrowEnabled then
             clearNotification("Throwing")
@@ -888,14 +957,53 @@ end
 
 
 
+--[[
 
 
 
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+
+local originalHipHeight = 0
+
+PlayerLeft:AddToggle("HipHeightToggleOption", {
+    Text = "GOD MOD",
+    Default = false,
+    Callback = function(state)
+        if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+            local humanoid = LP.Character:FindFirstChildOfClass("Humanoid")
+            
+            if state then
+                originalHipHeight = humanoid.HipHeight
+                humanoid.HipHeight = 7
+                humanoid.CameraOffset = Vector3.new(0, -7, 0)
+            else
+                humanoid.HipHeight = originalHipHeight
+                humanoid.CameraOffset = Vector3.new(0, 0, 0)
+            end
+        end
+    end
+})
+
+LP.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid", 5)
+    if humanoid and PlayerLeft:GetToggle("HipHeightToggleOption") then
+        originalHipHeight = humanoid.HipHeight
+        humanoid.HipHeight = 7
+        humanoid.CameraOffset = Vector3.new(0, -7, 0)
+    end
+end)
 
 
+]]
 
-
-
+PlayerLeft:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">God Mod</font>',
+	Default = false,
+	Callback = function(Value)
+		
+	end,
+})
 
 PlayerLeft:AddDropdown("WalkSpeedDropdown", {
     Values = { "Normal", "20", "30", "40", "50", "80", "100" },
@@ -1105,6 +1213,2952 @@ MiscBox:AddDropdown("RefreshTickRate", {
     end
 })
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local PlayerLeft2 = MainTab2:AddLeftGroupbox("REQUIRED", "file-text")
+
+PlayerLeft2:AddLabel("Requirements needed.")
+PlayerLeft2:AddLabel("Only works on Juniper Road.")
+PlayerLeft2:AddLabel("Only works on Custom No Evidence.")
+PlayerLeft2:AddLabel("Recommended ping: under 90 ms.")
+PlayerLeft2:AddLabel("Do not use any speed modifiers.")
+PlayerLeft2:AddLabel("Do not use micmicry challenge.")
+PlayerLeft2:AddLabel("Red = Detection is not working.")
+
+local PlayerLeft3 = MainTab2:AddLeftGroupbox("READ ME", "book")
+
+PlayerLeft3:AddLabel("Reminder: This detection is not 100% accurate.")
+PlayerLeft3:AddLabel("Play normally and don't rely on it completely.")
+PlayerLeft3:AddLabel("It only detects some ghost types.")
+PlayerLeft3:AddLabel("Please read the requirements")
+
+
+
+
+
+
+--================================================================--
+-- DETECT BANSHEE
+--================================================================--
+
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Bnahsee</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+
+--================================================================--
+-- DETECT SPECTER 
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Specter</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+
+--================================================================--
+-- DETECT SIREN
+--================================================================--
+
+
+-- Custom Notification Setup
+local playerGui = LP:WaitForChild("PlayerGui")
+local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+if not screenGui then
+	screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "DeltaNotifications"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
+end
+
+local Config = {
+	Scale = 0.8,
+	Duration = 10
+}
+
+local function CustomNotify(titleText, descText, duration)
+	duration = duration or Config.Duration
+	local scale = Config.Scale or 1.0
+	
+	local notifyFrame = Instance.new("Frame")
+	notifyFrame.Name = "Notification"
+	notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+	notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+	notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+	notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	notifyFrame.BackgroundTransparency = 0.25
+	notifyFrame.BorderSizePixel = 0
+	notifyFrame.Parent = screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+	corner.Parent = notifyFrame
+
+	local blackBorder = Instance.new("UIStroke")
+	blackBorder.Color = Color3.fromRGB(0, 0, 0)
+	blackBorder.Thickness = math.max(1, math.round(2 * scale))
+	blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	blackBorder.Parent = notifyFrame
+
+	local borderContainer = Instance.new("Frame")
+	borderContainer.Size = UDim2.new(1, 0, 1, 0)
+	borderContainer.BackgroundTransparency = 1
+	borderContainer.BorderSizePixel = 0
+	borderContainer.Parent = notifyFrame
+	corner:Clone().Parent = borderContainer
+
+	local purpleOutline = Instance.new("UIStroke")
+	purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+	purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+	purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	purpleOutline.Parent = borderContainer
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+	titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = titleText
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = math.round(16 * scale)
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	titleLabel.Parent = notifyFrame
+
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+	descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+	descLabel.BackgroundTransparency = 1
+	descLabel.Text = descText
+	descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+	descLabel.TextSize = math.round(13 * scale)
+	descLabel.Font = Enum.Font.Gotham
+	descLabel.TextWrapped = true
+	descLabel.TextXAlignment = Enum.TextXAlignment.Center
+	descLabel.TextYAlignment = Enum.TextYAlignment.Top
+	descLabel.Parent = notifyFrame
+
+	local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 40)
+	})
+	tweenIn:Play()
+
+	task.spawn(function()
+		task.wait(duration)
+		
+		local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -150),
+			BackgroundTransparency = 1
+		})
+		
+		TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		notifyFrame:Destroy()
+	end)
+end
+
+local speedConnection = nil
+local lastSpeed = 0
+local SirenTrackerToggle = true
+
+local function notifySiren()
+    CustomNotify("SIREN DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+end
+
+local function startSpeedTracker(humanoid)
+    if speedConnection then speedConnection:Disconnect() end
+    if not SirenTrackerToggle then return end
+    
+    lastSpeed = humanoid.WalkSpeed
+    speedConnection = RunService.RenderStepped:Connect(function()
+        if humanoid and humanoid.Parent then
+            local currentSpeed = humanoid.WalkSpeed
+            if lastSpeed > 0 and currentSpeed < lastSpeed then
+                local speedLoss = lastSpeed - currentSpeed
+                local percentDecrease = (speedLoss / lastSpeed) * 100
+                if math.abs(percentDecrease - 20) < 1.0 then
+                    notifySiren()
+                    if speedConnection then
+                        speedConnection:Disconnect()
+                        speedConnection = nil
+                        task.delay(5, function()
+                            if SirenTrackerToggle and humanoid and humanoid.Parent then
+                                startSpeedTracker(humanoid)
+                            end
+                        end)
+                    end
+                end
+            end
+            lastSpeed = currentSpeed
+        end
+    end)
+end
+
+EvidenceBox2:AddToggle("SirenTrackerOpt", {
+    Text = "Detect Siren",
+    Default = true,
+    Callback = function(state)
+        SirenTrackerToggle = state
+        if state then
+            if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+                startSpeedTracker(LP.Character:FindFirstChildOfClass("Humanoid"))
+            end
+        else
+            if speedConnection then
+                speedConnection:Disconnect()
+                speedConnection = nil
+            end
+        end
+    end
+})
+
+LP.CharacterAdded:Connect(function(character)
+    local humanoid = character:WaitForChild("Humanoid", 5)
+    if humanoid then
+        if SirenTrackerToggle then
+            startSpeedTracker(humanoid)
+        end
+    end
+end)
+
+task.spawn(function()
+    if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+        startSpeedTracker(LP.Character:FindFirstChildOfClass("Humanoid"))
+    end
+end)
+
+--================================================================--
+-- DETECT ASWANG 
+--================================================================--
+
+
+-- Custom Notification Setup
+local playerGui = LP:WaitForChild("PlayerGui")
+local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+if not screenGui then
+	screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "DeltaNotifications"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
+end
+
+local Config = {
+	Scale = 0.8,
+	Duration = 10
+}
+
+local function CustomNotify(titleText, descText, duration)
+	duration = duration or Config.Duration
+	local scale = Config.Scale or 1.0
+	
+	local notifyFrame = Instance.new("Frame")
+	notifyFrame.Name = "Notification"
+	notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+	notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+	notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+	notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	notifyFrame.BackgroundTransparency = 0.25
+	notifyFrame.BorderSizePixel = 0
+	notifyFrame.Parent = screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+	corner.Parent = notifyFrame
+
+	local blackBorder = Instance.new("UIStroke")
+	blackBorder.Color = Color3.fromRGB(0, 0, 0)
+	blackBorder.Thickness = math.max(1, math.round(2 * scale))
+	blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	blackBorder.Parent = notifyFrame
+
+	local borderContainer = Instance.new("Frame")
+	borderContainer.Size = UDim2.new(1, 0, 1, 0)
+	borderContainer.BackgroundTransparency = 1
+	borderContainer.BorderSizePixel = 0
+	borderContainer.Parent = notifyFrame
+	corner:Clone().Parent = borderContainer
+
+	local purpleOutline = Instance.new("UIStroke")
+	purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+	purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+	purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	purpleOutline.Parent = borderContainer
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+	titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = titleText
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = math.round(16 * scale)
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	titleLabel.Parent = notifyFrame
+
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+	descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+	descLabel.BackgroundTransparency = 1
+	descLabel.Text = descText
+	descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+	descLabel.TextSize = math.round(13 * scale)
+	descLabel.Font = Enum.Font.Gotham
+	descLabel.TextWrapped = true
+	descLabel.TextXAlignment = Enum.TextXAlignment.Center
+	descLabel.TextYAlignment = Enum.TextYAlignment.Top
+	descLabel.Parent = notifyFrame
+
+	local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 40)
+	})
+	tweenIn:Play()
+
+	task.spawn(function()
+		task.wait(duration)
+		
+		local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -150),
+			BackgroundTransparency = 1
+		})
+		
+		TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		notifyFrame:Destroy()
+	end)
+end
+
+local aswangConnection = nil
+local lastGhostSpeed = 0
+local AswangTrackerToggle = true
+
+-- Shared global configuration handling (if Wendigo confirmed elsewhere)
+local function isWendigoConfirmed()
+    return _G.isConfirmedWendigo == true
+end
+
+local function getGhostModel()
+    return workspace:FindFirstChild("Ghost")
+end
+
+local function getGhostHumanoid()
+    local ghostModel = getGhostModel()
+    if ghostModel then return ghostModel:FindFirstChildOfClass("Humanoid") end
+    return nil
+end
+
+local function notifyAswang()
+    if isWendigoConfirmed() then return end
+    CustomNotify("ASWANG DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+end
+
+local function startAswangTracker()
+    if aswangConnection then aswangConnection:Disconnect() end
+    if not AswangTrackerToggle then return end
+    
+    local saltPiles = workspace:FindFirstChild("SaltPiles")
+    local freshDisturbance = false
+    local saltConnections = {}
+
+    local function trackSalt(child)
+        if child.Name == "DisturbedSaltLine" then
+            freshDisturbance = true
+            task.delay(0.5, function() freshDisturbance = false end)
+        elseif child.Name == "SaltLine" then
+            local conn = child:GetPropertyChangedSignal("Name"):Connect(function()
+                if child.Name == "DisturbedSaltLine" then
+                    freshDisturbance = true
+                    task.delay(0.5, function() freshDisturbance = false end)
+                end
+            end)
+            table.insert(saltConnections, conn)
+        end
+    end
+
+    if saltPiles then
+        for _, child in ipairs(saltPiles:GetChildren()) do trackSalt(child) end
+        local mainConn = saltPiles.ChildAdded:Connect(trackSalt)
+        table.insert(saltConnections, mainConn)
+	end
+    
+    local ghostHumanoid = getGhostHumanoid()
+    lastGhostSpeed = ghostHumanoid and ghostHumanoid.WalkSpeed or 0
+    
+    aswangConnection = RunService.RenderStepped:Connect(function()
+        if isWendigoConfirmed() then return end
+        
+        local currentGhostHumanoid = getGhostHumanoid()
+        if currentGhostHumanoid and currentGhostHumanoid.Parent then
+            local currentGhostSpeed = currentGhostHumanoid.WalkSpeed
+            if lastGhostSpeed > 0 and currentGhostSpeed < lastGhostSpeed then
+                local speedLoss = lastGhostSpeed - currentGhostSpeed
+                local percentDecrease = (speedLoss / lastGhostSpeed) * 100
+                if math.abs(percentDecrease - 25) < 1.5 and freshDisturbance then
+                    notifyAswang()
+                    if aswangConnection then aswangConnection:Disconnect() aswangConnection = nil end
+                    for _, conn in ipairs(saltConnections) do conn:Disconnect() end
+                end
+            end
+            lastGhostSpeed = currentGhostSpeed
+        end
+    end)
+end
+
+EvidenceBox2:AddToggle("AswangTrackerOpt", {
+    Text = "Detect Aswang",
+    Default = true,
+    Callback = function(state)
+        AswangTrackerToggle = state
+        if state then
+            startAswangTracker()
+        else
+            if aswangConnection then aswangConnection:Disconnect() aswangConnection = nil end
+        end
+    end
+})
+
+task.spawn(startAswangTracker)
+
+--================================================================--
+-- DETECT DYBUKK
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local dybbukConnection = nil
+    local DybbukTrackerToggle = true
+    local ragdollPositions = {} -- Stores baseline positions to calculate travel distances
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function stopDybbuk()
+        if dybbukConnection then
+            dybbukConnection:Disconnect()
+            dybbukConnection = nil
+        end
+        table.clear(ragdollPositions)
+    end
+
+    local function startDybbuk()
+        stopDybbuk()
+        if not DybbukTrackerToggle then return end
+
+        dybbukConnection = RunService.Heartbeat:Connect(function()
+            if isWendigoConfirmed() or not DybbukTrackerToggle then return end
+
+            local ragdollsFolder = workspace:FindFirstChild("Ragdolls")
+            if ragdollsFolder then
+                for _, body in ipairs(ragdollsFolder:GetChildren()) do
+                    local hasPrompt = body:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    local torso = body:FindFirstChild("Torso") or body:FindFirstChild("UpperTorso") or body:FindFirstChild("HumanoidRootPart")
+
+                    if hasPrompt and torso and torso:IsA("BasePart") then
+                        -- Initialize tracking point if it's a freshly found corpse
+                        if not ragdollPositions[body] then
+                            ragdollPositions[body] = torso.Position
+                        else
+                            local initialPos = ragdollPositions[body]
+                            local currentPos = torso.Position
+                            local distanceMoved = (currentPos - initialPos).Magnitude
+
+                            -- Failsafe: Only flags if the ghost throws/shifts the body 3+ studs away from resting point
+                            if distanceMoved >= 3 then
+                                CustomNotify("DYBBUK DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
+                                stopDybbuk()
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("DybbukTrackerOpt", {
+        Text = "Detect Dybbuk",
+        Default = true,
+        Callback = function(state)
+            DybbukTrackerToggle = state
+            if state then
+                startDybbuk()
+            else
+                stopDybbuk()
+            end
+        end
+    })
+
+    startDybbuk()
+end)
+
+
+--================================================================--
+-- DETECT DULLAHAN 
+--================================================================--
+
+-- Custom Notification Setup
+local playerGui = LP:WaitForChild("PlayerGui")
+local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+if not screenGui then
+	screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "DeltaNotifications"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
+end
+
+local Config = {
+	Scale = 0.8,
+	Duration = 15
+}
+
+local function CustomNotify(titleText, descText, duration)
+	duration = duration or Config.Duration
+	local scale = Config.Scale or 1.0
+	
+	local notifyFrame = Instance.new("Frame")
+	notifyFrame.Name = "Notification"
+	notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+	notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+	notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+	notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	notifyFrame.BackgroundTransparency = 0.25
+	notifyFrame.BorderSizePixel = 0
+	notifyFrame.Parent = screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+	corner.Parent = notifyFrame
+
+	local blackBorder = Instance.new("UIStroke")
+	blackBorder.Color = Color3.fromRGB(0, 0, 0)
+	blackBorder.Thickness = math.max(1, math.round(2 * scale))
+	blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	blackBorder.Parent = notifyFrame
+
+	local borderContainer = Instance.new("Frame")
+	borderContainer.Size = UDim2.new(1, 0, 1, 0)
+	borderContainer.BackgroundTransparency = 1
+	borderContainer.BorderSizePixel = 0
+	borderContainer.Parent = notifyFrame
+	corner:Clone().Parent = borderContainer
+
+	local purpleOutline = Instance.new("UIStroke")
+	purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+	purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+	purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	purpleOutline.Parent = borderContainer
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+	titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = titleText
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = math.round(16 * scale)
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	titleLabel.Parent = notifyFrame
+
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+	descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+	descLabel.BackgroundTransparency = 1
+	descLabel.Text = descText
+	descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+	descLabel.TextSize = math.round(13 * scale)
+	descLabel.Font = Enum.Font.Gotham
+	descLabel.TextWrapped = true
+	descLabel.TextXAlignment = Enum.TextXAlignment.Center
+	descLabel.TextYAlignment = Enum.TextYAlignment.Top
+	descLabel.Parent = notifyFrame
+
+	local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 40)
+	})
+	tweenIn:Play()
+
+	task.spawn(function()
+		task.wait(duration)
+		
+		local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -150),
+			BackgroundTransparency = 1
+		})
+		
+		TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		notifyFrame:Destroy()
+	end)
+end
+
+local ghostConnection = nil
+local lastDullahanSpeed = 0
+local DullahanTrackerToggle = true
+
+local function isWendigoConfirmed()
+    return _G.isConfirmedWendigo == true
+end
+
+local function getGhostModel()
+    return workspace:FindFirstChild("Ghost")
+end
+
+local function getGhostHumanoid()
+    local ghostModel = getGhostModel()
+    if ghostModel then return ghostModel:FindFirstChildOfClass("Humanoid") end
+    return nil
+end
+
+local function notifyDullahan()
+    if isWendigoConfirmed() then return end
+    CustomNotify("DULLAHAN DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+end
+
+local function startGhostTracker()
+    if ghostConnection then ghostConnection:Disconnect() end
+    if not DullahanTrackerToggle then return end
+    
+    lastDullahanSpeed = 0
+    local consecutiveIncreases = 0
+    
+    ghostConnection = RunService.RenderStepped:Connect(function()
+        if isWendigoConfirmed() then return end
+        
+        local ghostHumanoid = getGhostHumanoid()
+        if ghostHumanoid and ghostHumanoid.Parent then
+            local currentGhostSpeed = ghostHumanoid.WalkSpeed
+            if lastDullahanSpeed > 0 and currentGhostSpeed > lastDullahanSpeed then
+                local difference = currentGhostSpeed - lastDullahanSpeed
+                if difference > 0 and difference <= 1.5 then
+                    consecutiveIncreases = consecutiveIncreases + 1
+                    if consecutiveIncreases >= 3 then
+                        notifyDullahan()
+                        consecutiveIncreases = 0
+                    end
+                end
+            else
+                consecutiveIncreases = 0
+            end
+            lastDullahanSpeed = currentGhostSpeed
+        end
+    end)
+end
+
+EvidenceBox2:AddToggle("DullahanTrackerOpt", {
+    Text = "Detect Dullahan",
+    Default = true,
+    Callback = function(state)
+        DullahanTrackerToggle = state
+        if state then
+            startGhostTracker()
+        else
+            if ghostConnection then
+                ghostConnection:Disconnect()
+                ghostConnection = nil
+            end
+        end
+    end
+})
+
+task.spawn(startGhostTracker)
+
+
+--================================================================--
+-- DETECT ONI & PHANTOM 
+--================================================================--
+task.spawn(function()
+    
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local oniConnection = nil
+    local phantomConnection = nil
+    local OniTrackerToggle = true
+    local PhantomTrackerToggle = true
+
+    local oniAnalyzing = false
+    local phantomAnalyzing = false
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function getGhostModel()
+        return workspace:FindFirstChild("Ghost")
+    end
+
+    local function getGhostHumanoid()
+        local ghostModel = getGhostModel()
+        if ghostModel then return ghostModel:FindFirstChildOfClass("Humanoid") end
+        return nil
+    end
+
+    local function stopOni()
+        if oniConnection then
+            oniConnection:Disconnect()
+            oniConnection = nil
+        end
+    end
+
+    local function startOni()
+        stopOni()
+        if not OniTrackerToggle then return end
+        
+        oniConnection = RunService.RenderStepped:Connect(function()
+            if isWendigoConfirmed() or oniAnalyzing then return end
+            
+            local ghostModel = getGhostModel()
+            local ghostHumanoid = getGhostHumanoid()
+            if ghostModel and ghostHumanoid and ghostHumanoid.Parent then
+                local isHunting = ghostModel:GetAttribute("Hunting")
+                if isHunting == true then
+                    oniAnalyzing = true
+                    
+                    local hasDroppedSpeed = false
+                    local startTime = os.clock()
+                    
+                    while os.clock() - startTime < 3 do
+                        local model = getGhostModel()
+                        local hum = getGhostHumanoid()
+                        if not model or not hum or not model:GetAttribute("Hunting") then
+                            oniAnalyzing = false
+                            return
+                        end
+                        
+                        -- Oni must strictly stay at high speed (27). If it drops below 25, it's not an Oni.
+                        if hum.WalkSpeed < 25 then
+                            hasDroppedSpeed = true
+                        end
+                        task.wait()
+                    end
+                    
+                    if not hasDroppedSpeed then
+                        CustomNotify("ONI DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                        stopOni()
+                    end
+                    oniAnalyzing = false
+                end
+            end
+        end)
+    end
+
+    local function stopPhantom()
+        if phantomConnection then
+            phantomConnection:Disconnect()
+            phantomConnection = nil
+        end
+    end
+
+    local function startPhantom()
+        stopPhantom()
+        if not PhantomTrackerToggle then return end
+        
+        phantomConnection = RunService.RenderStepped:Connect(function()
+            if isWendigoConfirmed() or phantomAnalyzing then return end
+            
+            local ghostModel = getGhostModel()
+            local ghostHumanoid = getGhostHumanoid()
+            if ghostModel and ghostHumanoid and ghostHumanoid.Parent then
+                local isHunting = ghostModel:GetAttribute("Hunting")
+                if isHunting == true then
+                    phantomAnalyzing = true
+                    
+                    local sawLowSpeed = false
+                    local sawHighSpeed = false
+                    local startTime = os.clock()
+                    
+                    while os.clock() - startTime < 3 do
+                        local model = getGhostModel()
+                        local hum = getGhostHumanoid()
+                        if not model or not hum or not model:GetAttribute("Hunting") then
+                            phantomAnalyzing = false
+                            return
+                        end
+                        
+                        local currentSpeed = hum.WalkSpeed
+                        if currentSpeed <= 23 then
+                            sawLowSpeed = true
+                        elseif currentSpeed >= 26 then
+                            sawHighSpeed = true
+                        end
+                        task.wait()
+                    end
+                    
+                    -- Phantom must actively change speed (it must hit both ranges within the 3 seconds)
+                    if sawLowSpeed and sawHighSpeed then
+                        CustomNotify("PHANTOM DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                        stopPhantom()
+                    end
+                    phantomAnalyzing = false
+                end
+            end
+        end)
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("OniTrackerOpt", {
+        Text = "Detect Oni",
+        Default = true,
+        Callback = function(state)
+            OniTrackerToggle = state
+            if state then
+                startOni()
+            else
+                stopOni()
+            end
+        end
+    })
+
+    EvidenceBox2:AddToggle("PhantomTrackerOpt", {
+        Text = "Detect Phantom",
+        Default = true,
+        Callback = function(state)
+            PhantomTrackerToggle = state
+            if state then
+                startPhantom()
+            else
+                stopPhantom()
+            end
+        end
+    })
+
+    startOni()
+    startPhantom()
+end)
+
+
+
+--================================================================--
+-- DETECT ENTITY 
+--================================================================--
+
+
+-- Custom Notification Setup
+local playerGui = LP:WaitForChild("PlayerGui")
+local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+if not screenGui then
+	screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "DeltaNotifications"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
+end
+
+local Config = {
+	Scale = 0.8,
+	Duration = 15
+}
+
+local function CustomNotify(titleText, descText, duration)
+	duration = duration or Config.Duration
+	local scale = Config.Scale or 1.0
+	
+	local notifyFrame = Instance.new("Frame")
+	notifyFrame.Name = "Notification"
+	notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+	notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+	notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+	notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	notifyFrame.BackgroundTransparency = 0.25
+	notifyFrame.BorderSizePixel = 0
+	notifyFrame.Parent = screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+	corner.Parent = notifyFrame
+
+	local blackBorder = Instance.new("UIStroke")
+	blackBorder.Color = Color3.fromRGB(0, 0, 0)
+	blackBorder.Thickness = math.max(1, math.round(2 * scale))
+	blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	blackBorder.Parent = notifyFrame
+
+	local borderContainer = Instance.new("Frame")
+	borderContainer.Size = UDim2.new(1, 0, 1, 0)
+	borderContainer.BackgroundTransparency = 1
+	borderContainer.BorderSizePixel = 0
+	borderContainer.Parent = notifyFrame
+	corner:Clone().Parent = borderContainer
+
+	local purpleOutline = Instance.new("UIStroke")
+	purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+	purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+	purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	purpleOutline.Parent = borderContainer
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+	titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = titleText
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = math.round(16 * scale)
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	titleLabel.Parent = notifyFrame
+
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+	descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+	descLabel.BackgroundTransparency = 1
+	descLabel.Text = descText
+	descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+	descLabel.TextSize = math.round(13 * scale)
+	descLabel.Font = Enum.Font.Gotham
+	descLabel.TextWrapped = true
+	descLabel.TextXAlignment = Enum.TextXAlignment.Center
+	descLabel.TextYAlignment = Enum.TextYAlignment.Top
+	descLabel.Parent = notifyFrame
+
+	local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 40)
+	})
+	tweenIn:Play()
+
+	task.spawn(function()
+		task.wait(duration)
+		
+		local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -150),
+			BackgroundTransparency = 1
+		})
+		
+		TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		notifyFrame:Destroy()
+	end)
+end
+
+local entityConnection = nil
+local EntityTrackerToggle = true
+
+local function getGhostModel()
+    return workspace:FindFirstChild("Ghost")
+end
+
+local function notifyEntity()
+    CustomNotify("ENTITY DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+end
+
+local function startEntityTracker()
+    if entityConnection then entityConnection:Disconnect() end
+    if not EntityTrackerToggle then return end
+    
+    local lastGhostPos = nil
+    entityConnection = RunService.RenderStepped:Connect(function()
+        local ghostModel = getGhostModel()
+        if ghostModel then
+            local rootPart = ghostModel:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                local currentGhostPos = rootPart.Position
+                if lastGhostPos then
+                    local distance = (currentGhostPos - lastGhostPos).Magnitude
+                    if distance > 10 then
+                        notifyEntity()
+                        if entityConnection then
+                            entityConnection:Disconnect()
+                            entityConnection = nil
+                        end
+                        return
+                    end
+                end
+                lastGhostPos = currentGhostPos
+            else lastGhostPos = nil end
+        else lastGhostPos = nil end
+    end)
+end
+
+EvidenceBox2:AddToggle("EntityTrackerOpt", {
+    Text = "Detect Entity",
+    Default = true,
+    Callback = function(state)
+        EntityTrackerToggle = state
+        if state then
+            startEntityTracker()
+        else
+            if entityConnection then
+                entityConnection:Disconnect()
+                entityConnection = nil
+            end
+        end
+    end
+})
+
+task.spawn(startEntityTracker)
+
+--================================================================--
+-- DETECT WENDIGO 
+--================================================================--
+
+-- Custom Notification Setup
+local playerGui = LP:WaitForChild("PlayerGui")
+local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+if not screenGui then
+	screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "DeltaNotifications"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
+end
+
+local Config = {
+	Scale = 0.8,
+	Duration = 15
+}
+
+local function CustomNotify(titleText, descText, duration)
+	duration = duration or Config.Duration
+	local scale = Config.Scale or 1.0
+	
+	local notifyFrame = Instance.new("Frame")
+	notifyFrame.Name = "Notification"
+	notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+	notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+	notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+	notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	notifyFrame.BackgroundTransparency = 0.25
+	notifyFrame.BorderSizePixel = 0
+	notifyFrame.Parent = screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+	corner.Parent = notifyFrame
+
+	local blackBorder = Instance.new("UIStroke")
+	blackBorder.Color = Color3.fromRGB(0, 0, 0)
+	blackBorder.Thickness = math.max(1, math.round(2 * scale))
+	blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	blackBorder.Parent = notifyFrame
+
+	local borderContainer = Instance.new("Frame")
+	borderContainer.Size = UDim2.new(1, 0, 1, 0)
+	borderContainer.BackgroundTransparency = 1
+	borderContainer.BorderSizePixel = 0
+	borderContainer.Parent = notifyFrame
+	corner:Clone().Parent = borderContainer
+
+	local purpleOutline = Instance.new("UIStroke")
+	purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+	purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+	purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	purpleOutline.Parent = borderContainer
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+	titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = titleText
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = math.round(16 * scale)
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	titleLabel.Parent = notifyFrame
+
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+	descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+	descLabel.BackgroundTransparency = 1
+	descLabel.Text = descText
+	descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+	descLabel.TextSize = math.round(13 * scale)
+	descLabel.Font = Enum.Font.Gotham
+	descLabel.TextWrapped = true
+	descLabel.TextXAlignment = Enum.TextXAlignment.Center
+	descLabel.TextYAlignment = Enum.TextYAlignment.Top
+	descLabel.Parent = notifyFrame
+
+	local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 40)
+	})
+	tweenIn:Play()
+
+	task.spawn(function()
+		task.wait(duration)
+		
+		local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -150),
+			BackgroundTransparency = 1
+		})
+		
+		TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+		TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+		
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		notifyFrame:Destroy()
+	end)
+end
+
+local wendigoConnection = nil
+local WendigoTrackerToggle = true
+
+local function getGhostModel()
+    return workspace:FindFirstChild("Ghost")
+end
+
+local function getGhostHumanoid()
+    local ghostModel = getGhostModel()
+    if ghostModel then return ghostModel:FindFirstChildOfClass("Humanoid") end
+    return nil
+end
+
+local function notifyWendigo()
+    CustomNotify("WENDIGO DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+end
+
+local function startWendigoTracker()
+    if wendigoConnection then wendigoConnection:Disconnect() end
+    if not WendigoTrackerToggle then return end
+    
+    wendigoConnection = RunService.RenderStepped:Connect(function()
+        local ghostHumanoid = getGhostHumanoid()
+        if ghostHumanoid and ghostHumanoid.Parent then
+            if ghostHumanoid.WalkSpeed >= 28 then
+                _G.isConfirmedWendigo = true -- Sync across separate scripts globally
+                notifyWendigo()
+                if wendigoConnection then
+                    wendigoConnection:Disconnect()
+                    wendigoConnection = nil
+                end
+            end
+        end
+    end)
+end
+
+EvidenceBox2:AddToggle("WendigoTrackerOpt", {
+    Text = "Detect Wendigo",
+    Default = true,
+    Callback = function(state)
+        WendigoTrackerToggle = state
+        if state then
+            startWendigoTracker()
+        else
+            if wendigoConnection then
+                wendigoConnection:Disconnect()
+                wendigoConnection = nil
+            end
+        end
+    end
+})
+
+task.spawn(function()
+    _G.isConfirmedWendigo = false
+    startWendigoTracker()
+end)
+
+--================================================================--
+-- DETECT SPIRIT 
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local function CustomNotify(titleText, descText, duration)
+        local scale = 0.8
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = 2
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = 4
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, -20, 0, 25)
+        titleLabel.Position = UDim2.new(0, 12, 0, 8)
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = 16
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, -24, 1, -40)
+        descLabel.Position = UDim2.new(0, 12, 0, 33)
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = 13
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration or 15)
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local function checkColorIsBlue(color)
+        return color.B > 0.8 and color.R < 0.5
+    end
+
+    local function isOilBlue()
+        local holyOilFolder = workspace:FindFirstChild("HolyOil")
+        if not holyOilFolder then return false end
+
+        for _, desc in ipairs(holyOilFolder:GetDescendants()) do
+            if desc:IsA("PointLight") then
+                if checkColorIsBlue(desc.Color) then
+                    return true
+                end
+            elseif desc:IsA("ParticleEmitter") then
+                local colorSeq = desc.Color
+                if colorSeq and colorSeq.Keypoints and #colorSeq.Keypoints > 0 then
+                    if checkColorIsBlue(colorSeq.Keypoints[1].Value) then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+
+    local spiritConnection = nil
+    local SpiritTrackerToggle = true
+
+    local function stopTracker()
+        if spiritConnection then
+            spiritConnection:Disconnect()
+            spiritConnection = nil
+        end
+    end
+
+    local function startTracker()
+        stopTracker()
+        if not SpiritTrackerToggle then return end
+
+        spiritConnection = RunService.Heartbeat:Connect(function()
+            if _G.isConfirmedWendigo == true then return end
+            
+            local ghostModel = workspace:FindFirstChild("Ghost")
+            if ghostModel then
+                local isHunting = ghostModel:GetAttribute("Hunting")
+                if isHunting == true then
+                    if isOilBlue() then
+                        if _G.isConfirmedWendigo ~= true then
+                            CustomNotify("SPIRIT DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                        end
+                        stopTracker()
+                    end
+                end
+            end
+        end)
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("SpiritTrackerOpt", {
+        Text = "Detect Spirit",
+        Default = true,
+        Callback = function(state)
+            SpiritTrackerToggle = state
+            if state then
+                startTracker()
+            else
+                stopTracker()
+            end
+        end
+    })
+
+    startTracker()
+end)
+
+
+
+
+
+
+
+--================================================================--
+-- DETECT THE WISP
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local wispSpawnConnection = nil
+    local wispChangedConnection = nil
+    local WispTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function cleanWispListener()
+        if wispChangedConnection then
+            wispChangedConnection:Disconnect()
+            wispChangedConnection = nil
+        end
+    end
+
+    local function checkWispState(ghostModel)
+        if not WispTrackerToggle or isWendigoConfirmed() then return end
+        
+        if ghostModel and ghostModel.Parent then
+            if ghostModel:GetAttribute("Burning") == true then
+                CustomNotify("WISP DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                
+                -- Turn off tracking once verified so it doesn't duplicate alerts
+                cleanWispListener()
+                if wispSpawnConnection then
+                    wispSpawnConnection:Disconnect()
+                    wispSpawnConnection = nil
+                end
+            end
+        end
+    end
+
+    local function setupAttributeListener(ghostModel)
+        cleanWispListener()
+        if not ghostModel then return end
+        
+        -- Instant initial check
+        checkWispState(ghostModel)
+        
+        -- Watch for the dynamic attribute checkmark updates (Fixes the mid-game changes!)
+        wispChangedConnection = ghostModel:GetAttributeChangedSignal("Burning"):Connect(function()
+            checkWispState(ghostModel)
+        end)
+    end
+
+    local function stopWisp()
+        cleanWispListener()
+        if wispSpawnConnection then
+            wispSpawnConnection:Disconnect()
+            wispSpawnConnection = nil
+        end
+    end
+
+    local function startWisp()
+        stopWisp()
+        if not WispTrackerToggle then return end
+        
+        -- Watch workspace for when the ghost appears
+        wispSpawnConnection = workspace.ChildAdded:Connect(function(child)
+            if child.Name == "Ghost" then
+                task.wait(0.1)
+                setupAttributeListener(child)
+            end
+        end)
+        
+        -- Failsafe in case it's already spawned inside the match
+        local existingGhost = workspace:FindFirstChild("Ghost")
+        if existingGhost then
+            setupAttributeListener(existingGhost)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("WispTrackerOpt", {
+        Text = "Detect Wisp",
+        Default = true,
+        Callback = function(state)
+            WispTrackerToggle = state
+            if state then
+                startWisp()
+            else
+                stopWisp()
+            end
+        end
+    })
+
+    startWisp()
+end)
+
+--================================================================--
+-- DETECT NIGHTMARE
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local SoundService = game:GetService("SoundService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local nightmareConnection = nil
+    local NightmareTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function checkSoundPlayed(sound)
+        if not NightmareTrackerToggle or isWendigoConfirmed() then return end
+        
+        if sound.SoundId == "rbxassetid://2978605361" or sound.SoundId == "2978605361" then
+            task.wait(0.1)
+            
+            local brokenGlassFolder = workspace:FindFirstChild("BrokenGlass")
+            if brokenGlassFolder then
+                local glassItems = brokenGlassFolder:GetChildren()
+                if #glassItems == 0 then
+                    CustomNotify("NIGHTMARE DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                    if nightmareConnection then
+                        nightmareConnection:Disconnect()
+                        nightmareConnection = nil
+                    end
+                end
+            end
+        end
+    end
+
+    local function stopNightmare()
+        if nightmareConnection then
+            nightmareConnection:Disconnect()
+            nightmareConnection = nil
+        end
+    end
+
+    local function startNightmare()
+        stopNightmare()
+        if not NightmareTrackerToggle then return end
+        
+        nightmareConnection = SoundService.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("Sound") then
+                checkSoundPlayed(descendant)
+            end
+        end)
+        
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("Sound") then
+                obj.Played:Connect(function()
+                    checkSoundPlayed(obj)
+                end)
+            end
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("NightmareTrackerOpt", {
+        Text = "Detect Nightmare",
+        Default = true,
+        Callback = function(state)
+            NightmareTrackerToggle = state
+            if state then
+                startNightmare()
+            else
+                stopNightmare()
+            end
+        end
+    })
+
+    startNightmare()
+end)
+
+--================================================================--
+-- DETECT UMBRA
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local umbraConnection = nil
+    local UmbraTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function checkGhostModel(ghostModel)
+        if not UmbraTrackerToggle or isWendigoConfirmed() then return end
+        
+        -- Provide a microscopic frame delay to make sure all parts/sounds inside the ghost are fully loaded
+        task.wait(0.1)
+        
+        if ghostModel and ghostModel.Parent then
+            local steps = ghostModel:FindFirstChild("GhostFootsteps")
+            if not steps then
+                CustomNotify("UMBRA DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                if umbraConnection then
+                    umbraConnection:Disconnect()
+                    umbraConnection = nil
+                end
+            end
+        end
+    end
+
+    local function stopUmbra()
+        if umbraConnection then
+            umbraConnection:Disconnect()
+            umbraConnection = nil
+        end
+    end
+
+    local function startUmbra()
+        stopUmbra()
+        if not UmbraTrackerToggle then return end
+        
+        -- Watch for whenever the Ghost model is added to workspace
+        umbraConnection = workspace.ChildAdded:Connect(function(child)
+            if child.Name == "Ghost" then
+                checkGhostModel(child)
+            end
+        end)
+        
+        -- Fail-safe check in case the script runs while the ghost is already present
+        local existingGhost = workspace:FindFirstChild("Ghost")
+        if existingGhost then
+            checkGhostModel(existingGhost)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("UmbraTrackerOpt", {
+        Text = "Detect Umbra",
+        Default = true,
+        Callback = function(state)
+            UmbraTrackerToggle = state
+            if state then
+                startUmbra()
+            else
+                stopUmbra()
+            end
+        end
+    })
+
+    startUmbra()
+end)
+
+
+--================================================================--
+-- DETECT KARES
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Kares</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+--================================================================--
+-- DETECT VEX
+--================================================================--
+task.spawn(function()
+    
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local vexConnection = nil
+    local VexTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function checkVexAttributes(ghostModel)
+        if not VexTrackerToggle or isWendigoConfirmed() then return end
+        
+        task.wait(0.1)
+        
+        if ghostModel and ghostModel.Parent then
+            local isInvisLidar = ghostModel:GetAttribute("InvisibleOnLIDAR")
+            if isInvisLidar == true then
+                CustomNotify("VEX DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                if vexConnection then
+                    vexConnection:Disconnect()
+                    vexConnection = nil
+                end
+            end
+        end
+    end
+
+    local function stopVex()
+        if vexConnection then
+            vexConnection:Disconnect()
+            vexConnection = nil
+        end
+    end
+
+    local function startVex()
+        stopVex()
+        if not VexTrackerToggle then return end
+        
+        vexConnection = workspace.ChildAdded:Connect(function(child)
+            if child.Name == "Ghost" then
+                checkVexAttributes(child)
+            end
+        end)
+        
+        local existingGhost = workspace:FindFirstChild("Ghost")
+        if existingGhost then
+            checkVexAttributes(existingGhost)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("VexTrackerOpt", {
+        Text = "Detect Vex",
+        Default = true,
+        Callback = function(state)
+            VexTrackerToggle = state
+            if state then
+                startVex()
+            else
+                stopVex()
+            end
+        end
+    })
+
+    startVex()
+end)
+
+--================================================================--
+-- DETECT WRIATH
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local wraithConnections = {}
+    local saltPilesConnection = nil
+    local WraithTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function monitorSaltLine(saltLine)
+        if not saltLine:IsA("Model") then return end
+        
+        local tracker = saltLine:WaitForChild("GhostTracker", 5)
+        if tracker and tracker:IsA("BasePart") then
+            local connection
+            connection = tracker.Touched:Connect(function(hit)
+                if not WraithTrackerToggle or isWendigoConfirmed() then return end
+                
+                local ghostModel = workspace:FindFirstChild("Ghost")
+                if ghostModel and hit:IsDescendantOf(ghostModel) then
+                    -- Microscopic delay to allow the game engine to complete its state updates
+                    task.wait(0.15)
+                    
+                    -- If the ghost touched it, but it's STILL named SaltLine, it's a Wraith
+                    if saltLine and saltLine.Parent and saltLine.Name == "SaltLine" then
+                        CustomNotify("WRAITH DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                        
+                        -- Disconnect this specific touch line so it doesn't spam notifications
+                        if connection then
+                            connection:Disconnect()
+                            wraithConnections[saltLine] = nil
+                        end
+                    end
+                end
+            end)
+            wraithConnections[saltLine] = connection
+        end
+    end
+
+    local function stopWraith()
+        if saltPilesConnection then
+            saltPilesConnection:Disconnect()
+            saltPilesConnection = nil
+        end
+        for saltLine, connection in pairs(wraithConnections) do
+            if connection then connection:Disconnect() end
+        end
+        table.clear(wraithConnections)
+    end
+
+    local function startWraith()
+        stopWraith()
+        if not WraithTrackerToggle then return end
+        
+        local saltPiles = workspace:FindFirstChild("SaltPiles")
+        if saltPiles then
+            -- Scan existing salt lines placed in the match
+            for _, child in ipairs(saltPiles:GetChildren()) do
+                if child.Name == "SaltLine" then
+                    monitorSaltLine(child)
+                end
+            end
+            
+            -- Keep monitoring if players drop new salt lines mid-game
+            saltPilesConnection = saltPiles.ChildAdded:Connect(function(child)
+                task.wait(0.1) -- Allow model structure to instantiate inside folder
+                if child.Name == "SaltLine" then
+                    monitorSaltLine(child)
+                end
+            end)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("WraithTrackerOpt", {
+        Text = "Detect Wraith",
+        Default = true,
+        Callback = function(state)
+            WraithTrackerToggle = state
+            if state then
+                startWraith()
+            else
+                stopWraith()
+            end
+        end
+    })
+
+    startWraith()
+end)
+
+--================================================================--
+-- DETECT SKINWALKER 
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local skinwalkerConnection = nil
+    local SkinwalkerTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function checkOrbPresence(child)
+        if not SkinwalkerTrackerToggle or isWendigoConfirmed() then return end
+        
+        if child and child.Name == "GhostOrb" then
+            CustomNotify("SKINWALKER DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+            if skinwalkerConnection then
+                skinwalkerConnection:Disconnect()
+                skinwalkerConnection = nil
+            end
+        end
+    end
+
+    local function stopSkinwalker()
+        if skinwalkerConnection then
+            skinwalkerConnection:Disconnect()
+            skinwalkerConnection = nil
+        end
+    end
+
+    local function startSkinwalker()
+        stopSkinwalker()
+        if not SkinwalkerTrackerToggle then return end
+        
+        -- Watch for whenever the GhostOrb model/part drops into workspace
+        skinwalkerConnection = workspace.ChildAdded:Connect(function(child)
+            checkOrbPresence(child)
+        end)
+        
+        -- Instant check in case it's already there
+        local existingOrb = workspace:FindFirstChild("GhostOrb")
+        if existingOrb then
+            checkOrbPresence(existingOrb)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("SkinwalkerTrackerOpt", {
+        Text = "Detect Skinwalker",
+        Default = true,
+        Callback = function(state)
+            SkinwalkerTrackerToggle = state
+            if state then
+                startSkinwalker()
+            else
+                stopSkinwalker()
+            end
+        end
+    })
+
+    startSkinwalker()
+end)
+
+--================================================================--
+-- DETECT VASPER
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Vasper</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+--================================================================--
+-- DETECT RAVAGER
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Ravager</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+--================================================================--
+-- DETECT DEMON
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Demon</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+--================================================================--
+-- DETECT LEVIATHAN 
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Leviathan</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+--================================================================--
+-- DETECT REVENANT 
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Revenant</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
+--================================================================--
+-- DETECT GHOUL 
+--================================================================--
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local ghoulSpawnConnection = nil
+    local ghoulChangedConnection = nil
+    local GhoulTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function cleanGhoulListener()
+        if ghoulChangedConnection then
+            ghoulChangedConnection:Disconnect()
+            ghoulChangedConnection = nil
+        end
+    end
+
+    local function checkGhoulState(ghostModel)
+        if not GhoulTrackerToggle or isWendigoConfirmed() then return end
+        
+        if ghostModel and ghostModel.Parent then
+            if ghostModel:GetAttribute("CantDisableElectronics") == true then
+                CustomNotify("GHOUL DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 10)
+                
+                cleanGhoulListener()
+                if ghoulSpawnConnection then
+                    ghoulSpawnConnection:Disconnect()
+                    ghoulSpawnConnection = nil
+                end
+            end
+        end
+    end
+
+    local function setupAttributeListener(ghostModel)
+        cleanGhoulListener()
+        if not ghostModel then return end
+        
+        checkGhoulState(ghostModel)
+        
+        ghoulChangedConnection = ghostModel:GetAttributeChangedSignal("CantDisableElectronics"):Connect(function()
+            checkGhoulState(ghostModel)
+        end)
+    end
+
+    local function stopGhoul()
+        cleanGhoulListener()
+        if ghoulSpawnConnection then
+            ghoulSpawnConnection:Disconnect()
+            ghoulSpawnConnection = nil
+        end
+    end
+
+    local function startGhoul()
+        stopGhoul()
+        if not GhoulTrackerToggle then return end
+        
+        ghoulSpawnConnection = workspace.ChildAdded:Connect(function(child)
+            if child.Name == "Ghost" then
+                task.wait(0.1)
+                setupAttributeListener(child)
+            end
+        end)
+        
+        local existingGhost = workspace:FindFirstChild("Ghost")
+        if existingGhost then
+            setupAttributeListener(existingGhost)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("GhoulTrackerOpt", {
+        Text = "Detect Ghoul",
+        Default = true,
+        Callback = function(state)
+            GhoulTrackerToggle = state
+            if state then
+                startGhoul()
+            else
+                stopGhoul()
+            end
+        end
+    })
+
+    startGhoul()
+end)
+
+--================================================================--
+-- DETECT SHADOW
+--================================================================--
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Shadow</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
 
 --================================================================--
 -- SETTINGS TAB
