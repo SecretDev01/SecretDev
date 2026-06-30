@@ -4170,7 +4170,7 @@ task.spawn(function()
                     -- Exactly 3 unique sound types played inside the frame window = Ravager multi-throw event!
                     -- Filters out full-house ghost events because those trigger massive/chaotic audio overlap profiles.
                     if distinctCount == 3 then
-                        CustomNotify("RAVAGER DETECTED!", "Reason: Simultaneous Multi-Throw (Exactly 3 Items)\nMade By: Vgxmod Hub", 15)
+                        CustomNotify("RAVAGER DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
                         stopRavager()
                     end
                     
