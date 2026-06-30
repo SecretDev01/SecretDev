@@ -1037,6 +1037,35 @@ PlayerLeft:AddToggle("InfoToggle", {
 	end,
 })
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local StaminaToggle = false
+
+task.spawn(function()
+    while task.wait() do
+        if StaminaToggle then
+            local maxStamina = workspace:GetAttribute("MaxStamina") or 100
+            
+            if LocalPlayer then
+                LocalPlayer:SetAttribute("Stamina", maxStamina)
+            end
+            
+            if LocalPlayer.Character then
+                LocalPlayer.Character:SetAttribute("Stamina", maxStamina)
+            end
+        end
+    end
+end)
+
+PlayerLeft:AddToggle("StaminaToggleOption", {
+    Text = "Inf Stamina",
+    Default = false,
+    Callback = function(state)
+        StaminaToggle = state
+    end
+})
+
+
 PlayerLeft:AddDropdown("WalkSpeedDropdown", {
     Values = { "Normal", "20", "30", "40", "50", "80", "100" },
     Default = 1,
@@ -4227,14 +4256,172 @@ end)
 --================================================================--
 -- DETECT DEMON
 --================================================================--
-EvidenceBox2:AddToggle("InfoToggle", {
-	Text = '<font color="rgb(255, 0, 0)">Detect Demon</font>',
-	Default = false,
-	Callback = function(Value)
-		print("Info Toggle changed:", Value)
-		espSettings.Windows.Enabled = Value 
-	end,
-})
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local demonConnection = nil
+    local DemonTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function stopDemon()
+        if demonConnection then
+            demonConnection:Disconnect()
+            demonConnection = nil
+        end
+    end
+
+    local function startDemon()
+        stopDemon()
+        if not DemonTrackerToggle then return end
+
+        local itemsFolder = workspace:WaitForChild("Items", 5)
+        if itemsFolder then
+            demonConnection = RunService.Heartbeat:Connect(function()
+                if isWendigoConfirmed() or not DemonTrackerToggle then return end
+
+                for _, item in ipairs(itemsFolder:GetChildren()) do
+                    if item.Name == "Cross" or item:GetAttribute("ItemName") == "Cross" then
+                        local crossPart = item:FindFirstChild("Cross") or item:FindFirstChild("Handle")
+                        
+                        if crossPart and crossPart:IsA("BasePart") then
+                            -- Monitors rotational velocity to check if the cross is floating and spinning in place
+                            if crossPart.AssemblyAngularVelocity.Magnitude > 4 then
+                                CustomNotify("DEMON DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
+                                stopDemon()
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("DemonTrackerOpt", {
+        Text = "Detect Demon",
+        Default = true,
+        Callback = function(state)
+            DemonTrackerToggle = state
+            if state then
+                startDemon()
+            else
+                stopDemon()
+            end
+        end
+    })
+
+    startDemon()
+end)
+
 --================================================================--
 -- DETECT LEVIATHAN 
 --================================================================--
