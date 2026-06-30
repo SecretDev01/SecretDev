@@ -1044,7 +1044,7 @@ local StaminaToggle = false
 task.spawn(function()
     while task.wait() do
         if StaminaToggle then
-            local maxStamina = workspace:GetAttribute("MaxStamina") or 100
+            local maxStamina = workspace:GetAttribute("MaxStamina") or 9999
             
             if LocalPlayer then
                 LocalPlayer:SetAttribute("Stamina", maxStamina)
