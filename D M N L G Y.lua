@@ -1170,7 +1170,7 @@ PlayerLeft:AddButton({
 
 EspBox:AddToggle("GhostVisibilityToggle", {
 	Text = "Permanent Ghost Visibility",
-	Default = false,
+	Default = true,
 	Callback = function(Value)
 		toggleGhostVisibility(Value)
 	end,
@@ -4363,6 +4363,7 @@ task.spawn(function()
 
     local demonConnection = nil
     local DemonTrackerToggle = true
+    local spinTimers = {} -- Tracks how long each cross has been spinning continuously
 
     local function isWendigoConfirmed()
         return _G.isConfirmedWendigo == true
@@ -4373,6 +4374,7 @@ task.spawn(function()
             demonConnection:Disconnect()
             demonConnection = nil
         end
+        table.clear(spinTimers)
     end
 
     local function startDemon()
@@ -4381,7 +4383,7 @@ task.spawn(function()
 
         local itemsFolder = workspace:WaitForChild("Items", 5)
         if itemsFolder then
-            demonConnection = RunService.Heartbeat:Connect(function()
+            demonConnection = RunService.Heartbeat:Connect(function(deltaTime)
                 if isWendigoConfirmed() or not DemonTrackerToggle then return end
 
                 for _, item in ipairs(itemsFolder:GetChildren()) do
@@ -4389,11 +4391,21 @@ task.spawn(function()
                         local crossPart = item:FindFirstChild("Cross") or item:FindFirstChild("Handle")
                         
                         if crossPart and crossPart:IsA("BasePart") then
-                            -- Monitors rotational velocity to check if the cross is floating and spinning in place
-                            if crossPart.AssemblyAngularVelocity.Magnitude > 4 then
-                                CustomNotify("DEMON DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
-                                stopDemon()
-                                break
+                            local angularVel = crossPart.AssemblyAngularVelocity.Magnitude
+                            local linearVelY = math.abs(crossPart.AssemblyLinearVelocity.Y)
+
+                            -- Criteria: It must be spinning fast AND it shouldn't be falling downwards (Y velocity near 0 = floating)
+                            if angularVel > 5 and linearVelY < 1.5 then
+                                spinTimers[item] = (spinTimers[item] or 0) + deltaTime
+                                
+                                -- Must hold the float-spin state continuously for 0.4 seconds to confirm Demon
+                                if spinTimers[item] >= 0.4 then
+                                    CustomNotify("DEMON DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
+                                    stopDemon()
+                                    break
+                                end
+                            else
+                                spinTimers[item] = 0 -- Reset if it hits the ground or stops spinning
                             end
                         end
                     end
@@ -4421,6 +4433,7 @@ task.spawn(function()
 
     startDemon()
 end)
+
 
 --================================================================--
 -- DETECT LEVIATHAN 
