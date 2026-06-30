@@ -1743,6 +1743,8 @@ EvidenceBox2:AddToggle("AswangTrackerOpt", {
 
 task.spawn(startAswangTracker)
 
+
+
 --================================================================--
 -- DETECT DYBUKK
 --================================================================--
@@ -1834,17 +1836,14 @@ task.spawn(function()
 
         task.spawn(function()
             task.wait(duration)
-            
             local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
                 Position = UDim2.new(0.5, 0, 0, -150),
                 BackgroundTransparency = 1
             })
-            
             TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
             TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
             TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
             TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
-            
             tweenOut:Play()
             tweenOut.Completed:Wait()
             notifyFrame:Destroy()
@@ -1853,7 +1852,8 @@ task.spawn(function()
 
     local dybbukConnection = nil
     local DybbukTrackerToggle = true
-    local ragdollPositions = {} -- Stores baseline positions to calculate travel distances
+    local ragdollPositions = {} 
+    local ragdollCooldowns = {}
 
     local function isWendigoConfirmed()
         return _G.isConfirmedWendigo == true
@@ -1865,6 +1865,7 @@ task.spawn(function()
             dybbukConnection = nil
         end
         table.clear(ragdollPositions)
+        table.clear(ragdollCooldowns)
     end
 
     local function startDybbuk()
@@ -1875,23 +1876,37 @@ task.spawn(function()
             if isWendigoConfirmed() or not DybbukTrackerToggle then return end
 
             local ragdollsFolder = workspace:FindFirstChild("Ragdolls")
-            if ragdollsFolder then
-                for _, body in ipairs(ragdollsFolder:GetChildren()) do
-                    local hasPrompt = body:FindFirstChildWhichIsA("ProximityPrompt", true)
-                    local torso = body:FindFirstChild("Torso") or body:FindFirstChild("UpperTorso") or body:FindFirstChild("HumanoidRootPart")
+            if not ragdollsFolder then return end
 
-                    if hasPrompt and torso and torso:IsA("BasePart") then
-                        -- Initialize tracking point if it's a freshly found corpse
-                        if not ragdollPositions[body] then
-                            ragdollPositions[body] = torso.Position
-                        else
+            for _, body in ipairs(ragdollsFolder:GetChildren()) do
+                local torso = body:FindFirstChild("Torso") or body:FindFirstChild("UpperTorso") or body:FindFirstChild("HumanoidRootPart")
+                if torso and torso:IsA("BasePart") then
+                    
+                    if not ragdollPositions[body] then
+                        ragdollPositions[body] = torso.Position
+                        ragdollCooldowns[body] = tick()
+                    else
+                        -- Wait 0.5s for physics to settle before checking distance
+                        if tick() - ragdollCooldowns[body] > 0.5 then
                             local initialPos = ragdollPositions[body]
                             local currentPos = torso.Position
                             local distanceMoved = (currentPos - initialPos).Magnitude
 
-                            -- Failsafe: Only flags if the ghost throws/shifts the body 3+ studs away from resting point
-                            if distanceMoved >= 3 then
-                                CustomNotify("DYBBUK DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
+                            -- Check for player interference
+                            local isTouchingPlayer = false
+                            for _, part in pairs(body:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    for _, p in pairs(part:GetTouchingParts()) do
+                                        if p.Parent:FindFirstChild("Humanoid") then
+                                            isTouchingPlayer = true
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+
+                            if not isTouchingPlayer and distanceMoved >= 5 then
+                                  CustomNotify("DYBUKK DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
                                 stopDybbuk()
                                 break
                             end
@@ -1902,25 +1917,19 @@ task.spawn(function()
         end)
     end
 
-    while not EvidenceBox2 do
-        task.wait(0.25)
-    end
-
+    while not EvidenceBox2 do task.wait(0.25) end
     EvidenceBox2:AddToggle("DybbukTrackerOpt", {
         Text = "Detect Dybbuk",
         Default = true,
         Callback = function(state)
             DybbukTrackerToggle = state
-            if state then
-                startDybbuk()
-            else
-                stopDybbuk()
-            end
+            if state then startDybbuk() else stopDybbuk() end
         end
     })
 
     startDybbuk()
 end)
+
 
 
 --================================================================--
@@ -2367,7 +2376,7 @@ end)
 --================================================================--
 -- DETECT ENTITY 
 --================================================================--
-
+--[[
 
 -- Custom Notification Setup
 local playerGui = LP:WaitForChild("PlayerGui")
@@ -2525,6 +2534,16 @@ EvidenceBox2:AddToggle("EntityTrackerOpt", {
 })
 
 task.spawn(startEntityTracker)
+]]
+
+EvidenceBox2:AddToggle("InfoToggle", {
+	Text = '<font color="rgb(255, 0, 0)">Detect Entity</font>',
+	Default = false,
+	Callback = function(Value)
+		print("Info Toggle changed:", Value)
+		espSettings.Windows.Enabled = Value 
+	end,
+})
 
 --================================================================--
 -- DETECT WENDIGO 
@@ -3995,14 +4014,216 @@ EvidenceBox2:AddToggle("InfoToggle", {
 --================================================================--
 -- DETECT RAVAGER
 --================================================================--
-EvidenceBox2:AddToggle("InfoToggle", {
-	Text = '<font color="rgb(255, 0, 0)">Detect Ravager</font>',
-	Default = false,
-	Callback = function(Value)
-		print("Info Toggle changed:", Value)
-		espSettings.Windows.Enabled = Value 
-	end,
-})
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local ravagerConnection = nil
+    local RavagerTrackerToggle = true
+    
+    local throwWindow = 0.15 
+    local uniqueSoundIdsThisFrame = {}
+    local trackingActive = false
+
+    -- Valid Ravager interaction sound targets matching your list
+    local targetSounds = {
+        ["9113470969"] = true, -- body
+        ["9118833449"] = true, -- book
+        ["9113251349"] = true, -- cardboard
+        ["9113768979"] = true, -- chair
+        ["9119920406"] = true, -- glass
+        ["9117450506"] = true, -- heavy
+        ["9113720294"] = true, -- medium
+        ["9116703825"] = true, -- metal
+        ["9116630454"] = true, -- metalcan
+        ["9113564136"] = true, -- plush
+        ["9120885468"] = true  -- wood
+    }
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function stopRavager()
+        if ravagerConnection then
+            ravagerConnection:Disconnect()
+            ravagerConnection = nil
+        end
+    end
+
+    local function checkSoundInstance(sound)
+        if not RavagerTrackerToggle or isWendigoConfirmed() then return end
+        
+        local assetId = sound.SoundId:match("%d+")
+        if assetId and targetSounds[assetId] then
+            uniqueSoundIdsThisFrame[assetId] = true
+            
+            if not trackingActive then
+                trackingActive = true
+                task.delay(throwWindow, function()
+                    local distinctCount = 0
+                    for _ in pairs(uniqueSoundIdsThisFrame) do
+                        distinctCount = distinctCount + 1
+                    end
+
+                    -- Exactly 3 unique sound types played inside the frame window = Ravager multi-throw event!
+                    -- Filters out full-house ghost events because those trigger massive/chaotic audio overlap profiles.
+                    if distinctCount == 3 then
+                        CustomNotify("RAVAGER DETECTED!", "Reason: Simultaneous Multi-Throw (Exactly 3 Items)\nMade By: Vgxmod Hub", 15)
+                        stopRavager()
+                    end
+                    
+                    table.clear(uniqueSoundIdsThisFrame)
+                    trackingActive = false
+                end)
+            end
+        end
+    end
+
+    local function startRavager()
+        stopRavager()
+        if not RavagerTrackerToggle then return end
+
+        local interactables = workspace:WaitForChild("Interactables", 5)
+        if interactables then
+            ravagerConnection = interactables.DescendantAdded:Connect(function(descendant)
+                if descendant:IsA("Sound") then
+                    -- If sound is already playing or immediately plays on spawn
+                    if descendant.IsPlaying then
+                        checkSoundInstance(descendant)
+                    else
+                        descendant:GetPropertyChangedSignal("IsPlaying"):Connect(function()
+                            if descendant.IsPlaying then
+                                checkSoundInstance(descendant)
+                            end
+                        end)
+                    end
+                end
+            end)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("RavagerTrackerOpt", {
+        Text = "Detect Ravager",
+        Default = true,
+        Callback = function(state)
+            RavagerTrackerToggle = state
+            if state then
+                startRavager()
+            else
+                stopRavager()
+            end
+        end
+    })
+
+    startRavager()
+end)
+
 --================================================================--
 -- DETECT DEMON
 --================================================================--
@@ -4028,14 +4249,170 @@ EvidenceBox2:AddToggle("InfoToggle", {
 --================================================================--
 -- DETECT REVENANT 
 --================================================================--
-EvidenceBox2:AddToggle("InfoToggle", {
-	Text = '<font color="rgb(255, 0, 0)">Detect Revenant</font>',
-	Default = false,
-	Callback = function(Value)
-		print("Info Toggle changed:", Value)
-		espSettings.Windows.Enabled = Value 
-	end,
-})
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local TweenService = game:GetService("TweenService")
+    local LP = Players.LocalPlayer
+
+    local playerGui = LP:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("DeltaNotifications")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "DeltaNotifications"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = playerGui
+    end
+
+    local Config = {
+        Scale = 0.8,
+        Duration = 15
+    }
+
+    local function CustomNotify(titleText, descText, duration)
+        duration = duration or Config.Duration
+        local scale = Config.Scale or 1.0
+        
+        local notifyFrame = Instance.new("Frame")
+        notifyFrame.Name = "Notification"
+        notifyFrame.Size = UDim2.new(0, math.round(300 * scale), 0, math.round(95 * scale))
+        notifyFrame.Position = UDim2.new(0.5, 0, 0, -150) 
+        notifyFrame.AnchorPoint = Vector2.new(0.5, 0)
+        notifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        notifyFrame.BackgroundTransparency = 0.25
+        notifyFrame.BorderSizePixel = 0
+        notifyFrame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, math.round(8 * scale))
+        corner.Parent = notifyFrame
+
+        local blackBorder = Instance.new("UIStroke")
+        blackBorder.Color = Color3.fromRGB(0, 0, 0)
+        blackBorder.Thickness = math.max(1, math.round(2 * scale))
+        blackBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackBorder.Parent = notifyFrame
+
+        local borderContainer = Instance.new("Frame")
+        borderContainer.Size = UDim2.new(1, 0, 1, 0)
+        borderContainer.BackgroundTransparency = 1
+        borderContainer.BorderSizePixel = 0
+        borderContainer.Parent = notifyFrame
+        corner:Clone().Parent = borderContainer
+
+        local purpleOutline = Instance.new("UIStroke")
+        purpleOutline.Color = Color3.fromRGB(128, 0, 128)
+        purpleOutline.Thickness = math.max(1, math.round(4 * scale))
+        purpleOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        purpleOutline.Parent = borderContainer
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, math.round(-20 * scale), 0, math.round(25 * scale))
+        titleLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(8 * scale))
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = math.round(16 * scale)
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+        titleLabel.Parent = notifyFrame
+
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, math.round(-24 * scale), 1, math.round(-40 * scale))
+        descLabel.Position = UDim2.new(0, math.round(12 * scale), 0, math.round(33 * scale))
+        descLabel.BackgroundTransparency = 1
+        descLabel.Text = descText
+        descLabel.TextColor3 = Color3.fromRGB(215, 215, 215)
+        descLabel.TextSize = math.round(13 * scale)
+        descLabel.Font = Enum.Font.Gotham
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Center
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.Parent = notifyFrame
+
+        local tweenIn = TweenService:Create(notifyFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, 0, 0, 40)
+        })
+        tweenIn:Play()
+
+        task.spawn(function()
+            task.wait(duration)
+            
+            local tweenOut = TweenService:Create(notifyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0, -150),
+                BackgroundTransparency = 1
+            })
+            
+            TweenService:Create(titleLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(descLabel, TweenInfo.new(0.2), {TextTransparency = 1}):Play()
+            TweenService:Create(purpleOutline, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            TweenService:Create(blackBorder, TweenInfo.new(0.2), {Transparency = 1}):Play()
+            
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            notifyFrame:Destroy()
+        end)
+    end
+
+    local revenantConnection = nil
+    local RevenantTrackerToggle = true
+
+    local function isWendigoConfirmed()
+        return _G.isConfirmedWendigo == true
+    end
+
+    local function stopRevenant()
+        if revenantConnection then
+            revenantConnection:Disconnect()
+            revenantConnection = nil
+        end
+    end
+
+    local function startRevenant()
+        stopRevenant()
+        if not RevenantTrackerToggle then return end
+
+        local ragdollsFolder = workspace:WaitForChild("Ragdolls", 5)
+        if ragdollsFolder then
+            revenantConnection = ragdollsFolder.ChildAdded:Connect(function(child)
+                if isWendigoConfirmed() or not RevenantTrackerToggle then return end
+
+                local ghost = workspace:FindFirstChild("Ghost")
+                if ghost and ghost:GetAttribute("Hunting") == true then
+                    -- Player just died during an active hunt! Wait a brief moment to check if hunt stops
+                    task.wait(0.6)
+                    
+                    local activeGhost = workspace:FindFirstChild("Ghost")
+                    if activeGhost and activeGhost:GetAttribute("Hunting") == false then
+                        -- The hunt immediately ended right after a single kill occurred
+                        CustomNotify("REVENANT DETECTED!", "Made By: Vgxmod Hub\nDiscord: https://discord.gg/n9gtmefsjc", 15)
+                        stopRevenant()
+                    end
+                end
+            end)
+        end
+    end
+
+    while not EvidenceBox2 do
+        task.wait(0.25)
+    end
+
+    EvidenceBox2:AddToggle("RevenantTrackerOpt", {
+        Text = "Detect Revenant",
+        Default = true,
+        Callback = function(state)
+            RevenantTrackerToggle = state
+            if state then
+                startRevenant()
+            else
+                stopRevenant()
+            end
+        end
+    })
+
+    startRevenant()
+end)
+
 --================================================================--
 -- DETECT GHOUL 
 --================================================================--
