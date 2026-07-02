@@ -12,18 +12,27 @@ print("------------------------------------------------------------------")
 --================================================================--
 -- LOAD LIBRARY (Vgxmod UI)
 --================================================================--
-local repo = "https://raw.githubusercontent.com/Devilx89/P30/refs/heads/main/"
+print("[Vgxmod Hub] Loading libraries...")
+
+local Library, ThemeManager, SaveManager
 
 local success, err = pcall(function()
-    Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-    ThemeManager = loadstring(game:HttpGet(repo .. "Add-ons/ThemeManager.lua"))()
-    SaveManager = loadstring(game:HttpGet(repo .. "Add-ons/SaveManager.lua"))()
+    Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SecretDev01/C-L-V/refs/heads/main/Custom/Library.lua"))()
+    print("[Vgxmod Hub] Library loaded.")
+
+    ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/SecretDev01/C-L-V/refs/heads/main/Custom/ThemeManager.lua"))()
+    print("[Vgxmod Hub] ThemeManager loaded.")
+
+    SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/SecretDev01/C-L-V/refs/heads/main/Custom/SaveManager.lua"))()
+    print("[Vgxmod Hub] SaveManager loaded.")
 end)
 
 if not success then
-    warn("Failed to load Vgxmod Hub libraries: " .. tostring(err))
+    warn("[Vgxmod Hub] Failed to load libraries: " .. tostring(err))
     return
 end
+
+print("[Vgxmod Hub] All libraries loaded successfully.")
 
 local Options = Library.Options
 local Toggles = Library.Toggles
@@ -518,58 +527,7 @@ end)
 -- GHOET VISIBILITY 
 --================================================================--
 
-local GHOST_NAME = "Ghost"
-local TARGET_FOLDER = "VisibleParts"
-local ghostLoopConnection = nil
 
-local function toggleGhostVisibility(state)
-	if state then
-		if ghostLoopConnection then ghostLoopConnection:Disconnect() end
-		
-		ghostLoopConnection = RunService.Heartbeat:Connect(function()
-			local ghost = workspace:FindFirstChild(GHOST_NAME)
-			if ghost then
-				for _, child in ipairs(ghost:GetDescendants()) do
-					if (child:IsA("Script") or child:IsA("LocalScript")) and not child.Disabled then
-						child.Disabled = true
-					end
-				end
-
-				local visiblePartsFolder = ghost:FindFirstChild(TARGET_FOLDER)
-				if visiblePartsFolder then
-					for _, part in ipairs(visiblePartsFolder:GetDescendants()) do
-						if part:IsA("BasePart") and part.Transparency ~= 0 then
-							part.Transparency = 0
-						end
-					end
-				end
-			end
-		end)
-	else
-		if ghostLoopConnection then
-			ghostLoopConnection:Disconnect()
-			ghostLoopConnection = nil
-		end
-		
-		local ghost = workspace:FindFirstChild(GHOST_NAME)
-		if ghost then
-			for _, child in ipairs(ghost:GetDescendants()) do
-				if child:IsA("Script") or child:IsA("LocalScript") then
-					child.Disabled = false
-				end
-			end
-			
-			local visiblePartsFolder = ghost:FindFirstChild(TARGET_FOLDER)
-			if visiblePartsFolder then
-				for _, part in ipairs(visiblePartsFolder:GetDescendants()) do
-					if part:IsA("BasePart") then
-						part.Transparency = 0
-					end
-				end
-			end
-		end
-	end
-end
 
 
 --================================================================--
@@ -614,11 +572,22 @@ InfoRight:AddLabel("PC USER")
 InfoRight:AddLabel("To Close the Menu")
 InfoRight:AddLabel("Just Press The CTRL")
 InfoRight:AddLabel()
+--================================================================--
+-- MAIN CONTROLS TAB
+--================================================================--
+local MainTab = Window:AddTab("Main", "house")
+local AutoLeft = MainTab:AddLeftGroupbox("AUTOMATION", "cpu")
+local PlayerLeft = MainTab:AddLeftGroupbox("PLAYER MODS", "user")
+local EspBox = MainTab:AddRightGroupbox("ESP", "eye")
 
+local EmoteBox = MainTab:AddRightGroupbox("EMOTE", "smile")
+
+local EvidenceBox = MainTab:AddRightGroupbox("EVIDENCE", "file-plus")
+local MiscBox = MainTab:AddRightGroupbox("MISCELLANEOUS")
 --================================================================--
 -- EVIDENCE DASHBOARD TAB
 --================================================================--
-local DevTab = Window:AddTab("Evidence Monitor", "eye")
+local DevTab = Window:AddTab("Evidence Monitor", "thermometer")
 local EvLeft = DevTab:AddLeftGroupbox("EVIDENCE STATS")
 local GameLeft = DevTab:AddRightGroupbox("GHOST LOGS")
 
@@ -641,23 +610,12 @@ local LabelGhostType    = GameLeft:AddLabel("Ghost Type: ...")
 local LabelDiff        = GameLeft:AddLabel("Difficulty: Unknown")
 local LabelPhotos      = GameLeft:AddLabel("Photos Taken: (0/6)")
 
---================================================================--
--- MAIN CONTROLS TAB
---================================================================--
-local MainTab = Window:AddTab("Main", "house")
-local AutoLeft = MainTab:AddLeftGroupbox("AUTOMATION", "cpu")
-local PlayerLeft = MainTab:AddLeftGroupbox("PLAYER MODS", "user")
-local EspBox = MainTab:AddRightGroupbox("ESP", "eye")
 
-local EmoteBox = MainTab:AddRightGroupbox("EMOTE", "smile")
-
-local EvidenceBox = MainTab:AddRightGroupbox("EVIDENCE", "file-plus")
-local MiscBox = MainTab:AddRightGroupbox("MISCELLANEOUS")
 
 --================================================================--
 -- GHOST INFO
 --================================================================--
-local MainTab2 = Window:AddTab("Ghost", "house")
+local MainTab2 = Window:AddTab("Ghost", "sword")
 local EvidenceBox2 = MainTab2:AddRightGroupbox("DETECTION", "folder-plus")
 local PlayerLeft2 = MainTab2:AddLeftGroupbox("REQUIRED", "file-text")
 
@@ -1039,7 +997,7 @@ PlayerLeft:AddToggle("InfoToggle", {
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local StaminaToggle = false
+local StaminaToggle = true
 
 task.spawn(function()
     while task.wait() do
@@ -1059,7 +1017,7 @@ end)
 
 PlayerLeft:AddToggle("StaminaToggleOption", {
     Text = "Inf Stamina",
-    Default = false,
+    Default = true,
     Callback = function(state)
         StaminaToggle = state
     end
@@ -1168,13 +1126,71 @@ PlayerLeft:AddButton({
 -- ESP TAB
 --================================================================--
 
+local RunService = game:GetService("RunService")
+
+local GHOST_NAME = "Ghost"
+local TARGET_FOLDER = "VisibleParts"
+local ghostLoopConnection = nil
+
+local function toggleGhostVisibility(state)
+	if state then
+		if ghostLoopConnection then ghostLoopConnection:Disconnect() end
+		
+		ghostLoopConnection = RunService.Heartbeat:Connect(function()
+			local ghost = workspace:FindFirstChild(GHOST_NAME)
+			if ghost then
+				for _, child in ipairs(ghost:GetDescendants()) do
+					if (child:IsA("Script") or child:IsA("LocalScript")) and not child.Disabled then
+						child.Disabled = true
+					end
+				end
+
+				local visiblePartsFolder = ghost:FindFirstChild(TARGET_FOLDER)
+				if visiblePartsFolder then
+					for _, part in ipairs(visiblePartsFolder:GetDescendants()) do
+						if part:IsA("BasePart") and part.Transparency ~= 0 then
+							part.Transparency = 0
+						end
+					end
+				end
+			end
+		end)
+	else
+		if ghostLoopConnection then
+			ghostLoopConnection:Disconnect()
+			ghostLoopConnection = nil
+		end
+		
+		local ghost = workspace:FindFirstChild(GHOST_NAME)
+		if ghost then
+			for _, child in ipairs(ghost:GetDescendants()) do
+				if child:IsA("Script") or child:IsA("LocalScript") then
+					child.Disabled = false
+				end
+			end
+			
+			local visiblePartsFolder = ghost:FindFirstChild(TARGET_FOLDER)
+			if visiblePartsFolder then
+				for _, part in ipairs(visiblePartsFolder:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.Transparency = 1
+					end
+				end
+			end
+		end
+	end
+end
+
 EspBox:AddToggle("GhostVisibilityToggle", {
-	Text = "Permanent Ghost Visibility",
+	Text = "Ghost Visibility",
 	Default = true,
 	Callback = function(Value)
 		toggleGhostVisibility(Value)
 	end,
 })
+
+toggleGhostVisibility(true)
+
 
 EspBox:AddToggle("GhostEspOpt", {
     Text = "Ghost ESP",
@@ -2399,7 +2415,6 @@ task.spawn(function()
     startOni()
     startPhantom()
 end)
-
 
 
 --================================================================--
